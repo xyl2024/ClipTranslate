@@ -3,7 +3,7 @@ name = "ClipTranslate"
 version = "0.1.0"
 description = "一个桌面端翻译工具，支持全局快捷键翻译剪切板内容，支持英语和中文两种目标语言"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "dotenv>=0.9.9",
     "keyboard>=0.13.5",
