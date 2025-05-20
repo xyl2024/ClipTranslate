@@ -1,18 +1,22 @@
 import json
-import os
 import logging
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+DEFAULT_MODEL = "qwen-mt-turbo"
+DEFAULT_HOTKEY_TO_CH = "f2"
+DEFAULT_HOTKEY_TO_EN = "f4"
+
 
 class ConfigManager:
     DEFAULT_CONFIG = {
-        "hotkey_to_chinese": "f2",
-        "hotkey_to_english": "f10",
+        "hotkey_to_chinese": DEFAULT_HOTKEY_TO_CH,
+        "hotkey_to_english": DEFAULT_HOTKEY_TO_EN,
         "api_key": "",
-        "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
-        "api_model": "qwen-mt-plus",
+        "api_url": DEFAULT_BASE_URL,
+        "api_model": DEFAULT_MODEL,
     }
 
     def __init__(self):

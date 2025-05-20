@@ -1,6 +1,6 @@
+import json
 import logging
 import requests
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class Translator:
         raise NotImplementedError("Translator派生类未实现translate_stream()方法")
 
 
-class AliyuncsTranslator(Translator):
+class QwenTranslator(Translator):
     def __init__(self, config=None):
         self.config = config or {}
         self.api_key = self.config.get("api_key", "")
@@ -28,14 +28,14 @@ class AliyuncsTranslator(Translator):
         if not self.api_key:
             logger.error("未提供API密钥，翻译功能将不可用")
 
-        logger.info("AliyuncsTranslator init done.")
+        logger.info("千问翻译器初始化完成")
 
     def update_config(self, config):
         self.config = config
         self.api_key = config.get("api_key", self.api_key)
         self.api_url = config.get("api_url", self.api_url)
         self.api_model = config.get("api_model", self.api_model)
-        logger.info("Translator config updated.")
+        logger.info("翻译器配置已更新")
 
     def translate(self, text, target_lang="Chinese"):
         if target_lang not in ["Chinese", "English"]:
@@ -140,10 +140,9 @@ class AliyuncsTranslator(Translator):
                                 "model": chunk["model"],
                             }
 
-            logger.info(f"原文：{text}")
-            logger.info(f"译文({target_lang})：{content}")
-            logger.info(f"Token使用: {self.last_usage}")
-
+            logger.info(f"原文：{text[:20]}......")
+            logger.info(f"译文：{content[:20]}......")
+            logger.info(f"成本: {self.last_usage}")
             return content
 
         except Exception as e:

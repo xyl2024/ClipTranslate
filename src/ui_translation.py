@@ -1,3 +1,5 @@
+import logging
+import pyperclip
 from PySide6.QtWidgets import (
     QMainWindow,
     QTextEdit,
@@ -8,10 +10,8 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QHBoxLayout,
 )
-from PySide6.QtCore import Qt, Slot, Signal, QTimer
-from PySide6.QtGui import QFont, QIcon
-import pyperclip
-import logging
+from PySide6.QtGui import QFont
+from PySide6.QtCore import Qt, Slot, QTimer
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,43 @@ TEXT_AREA_CSS = """
     }
 """
 
+COPY_BUTTON_CSS="""
+    QPushButton {
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 4px;
+        padding: 5px 10px;
+    }
+    QPushButton:hover {
+        background-color: #45a049;
+    }
+"""
+
+COPYED_BUTTON_CSS="""
+    QPushButton {
+        background-color: #2196F3;
+        color: white;
+        border-radius: 4px;
+        padding: 5px 10px;
+    }
+"""
+
+CLOSE_BUTTON_CSS="""
+    QPushButton {
+        background-color: #f44336;
+        color: white;
+        border-radius: 4px;
+    }
+    QPushButton:hover {
+        background-color: #d32f2f;
+    }
+"""
+
+UITRANSLATION_CSS="""
+    QMainWindow {
+        background-color: #D2DCDF;
+    }
+"""
 
 class UiTranslation(QMainWindow):
     def __init__(self):
@@ -78,8 +115,8 @@ class UiTranslation(QMainWindow):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
 
         self._drag_position = None
-        self.current_original_text = ""  # 存储当前原文
-        self.current_translation = ""  # 存储当前译文
+        self.current_original_text = ""
+        self.current_translation = ""
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -93,37 +130,17 @@ class UiTranslation(QMainWindow):
         title_label.setFont(QFont("Consolas", 12, QFont.Bold))
         header_layout.addWidget(title_label, 1)
 
-        # 添加复制按钮
         self.copy_button = QPushButton("复制译文")
         self.copy_button.setFixedHeight(30)
         self.copy_button.clicked.connect(self.copy_translation)
-        self.copy_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                border-radius: 4px;
-                padding: 5px 10px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-        """)
+        self.copy_button.setStyleSheet(COPY_BUTTON_CSS)
         header_layout.addWidget(self.copy_button)
 
         close_button = QPushButton("×")
         close_button.setFixedSize(30, 30)
         close_button.setFont(QFont("Arial", 14))
         close_button.clicked.connect(self.hide)
-        close_button.setStyleSheet("""
-            QPushButton {
-                background-color: #f44336;
-                color: white;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #d32f2f;
-            }
-        """)
+        close_button.setStyleSheet(CLOSE_BUTTON_CSS)
         header_layout.addWidget(close_button, 0)
 
         layout.addLayout(header_layout)
@@ -140,19 +157,13 @@ class UiTranslation(QMainWindow):
         self.progress_bar.hide()
         layout.addWidget(self.progress_bar)
 
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #D2DCDF;
-            }
-        """)
-
-        # 添加token使用状态标签
         self.token_label = QLabel()
         self.token_label.setAlignment(Qt.AlignLeft)
         self.token_label.setFont(QFont("Consolas", 9, QFont.Bold))
         layout.addWidget(self.token_label)
-
-        logger.info("TranslationWindow init done.")
+        
+        self.setStyleSheet(UITRANSLATION_CSS)
+        logger.info("翻译窗口初始化完成")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -180,6 +191,7 @@ class UiTranslation(QMainWindow):
         delimiter = "——-——" * 9
         self.current_translation = translated
         self.text_area.setText(f"{text}\n{delimiter}\n{translated}")
+        
         # 滚动到底部
         self.text_area.verticalScrollBar().setValue(
             self.text_area.verticalScrollBar().maximum()
@@ -203,7 +215,7 @@ class UiTranslation(QMainWindow):
             total_cost = prompt_cost + completion_cost
             cost_str = f"{prompt_cost:.4f}+{completion_cost:.4f}={total_cost:.4f}元"
             self.token_label.setText(
-                f"😭Token: {prompt}+{completion}={total} | 💰Cost: {cost_str}"
+                f"😭Token: {prompt}+{completion}={total} 💰Cost: {cost_str}"
             )
 
         self.progress_bar.hide()
@@ -228,34 +240,16 @@ class UiTranslation(QMainWindow):
     def copy_translation(self):
         if self.current_translation:
             pyperclip.copy(self.current_translation)
-            # 临时改变按钮文字，表示已复制
             original_text = self.copy_button.text()
             self.copy_button.setText("已复制!")
-            self.copy_button.setStyleSheet("""
-                QPushButton {
-                    background-color: #2196F3;
-                    color: white;
-                    border-radius: 4px;
-                    padding: 5px 10px;
-                }
-            """)
+            self.copy_button.setStyleSheet(COPYED_BUTTON_CSS)
 
             # 使用QTimer延时恢复按钮文字
             QTimer.singleShot(1500, lambda: self.reset_copy_button(original_text))
 
     def reset_copy_button(self, text):
         self.copy_button.setText(text)
-        self.copy_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                border-radius: 4px;
-                padding: 5px 10px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-        """)
+        self.copy_button.setStyleSheet(COPY_BUTTON_CSS)
 
     @Slot(str)
     def update_translation_progress(self, partial_translation):

@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -10,17 +11,13 @@ from PySide6.QtWidgets import (
     QTabWidget,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
 
-import logging
 from utils import get_app_icon
 
 logger = logging.getLogger(__name__)
 
 
 class HotkeyEdit(QLineEdit):
-    """自定义组件用于捕获键盘快捷键"""
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setReadOnly(True)
@@ -28,6 +25,7 @@ class HotkeyEdit(QLineEdit):
 
     def keyPressEvent(self, event):
         # 简单处理，实际应用中可能需要更复杂的逻辑
+        # todo
         key_text = event.text().lower()
         if key_text:
             if event.modifiers() & Qt.ControlModifier:
@@ -37,7 +35,6 @@ class HotkeyEdit(QLineEdit):
             if event.modifiers() & Qt.ShiftModifier:
                 key_text = "shift+" + key_text
 
-            # 处理功能键
             key = event.key()
             if Qt.Key_F1 <= key <= Qt.Key_F12:
                 key_text = f"f{key - Qt.Key_F1 + 1}"
@@ -51,16 +48,11 @@ class UiSettings(QDialog):
 
     def __init__(self, config, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("设置")
+        self.setWindowTitle("ClipTranslate - 设置")
         self.setMinimumWidth(400)
 
-        # 设置窗口图标
         self.setWindowIcon(get_app_icon("app_icon.png"))
-
-        # 设置为非模态窗口
         self.setWindowModality(Qt.NonModal)
-
-        # 避免关闭窗口时退出应用程序
         self.setAttribute(Qt.WA_QuitOnClose, False)
 
         self.config = config
@@ -70,10 +62,8 @@ class UiSettings(QDialog):
     def setup_ui(self):
         layout = QVBoxLayout(self)
 
-        # 创建标签页
         tab_widget = QTabWidget()
 
-        # 快捷键设置页
         hotkey_tab = QWidget()
         hotkey_layout = QVBoxLayout(hotkey_tab)
 
@@ -89,7 +79,6 @@ class UiSettings(QDialog):
         hotkey_layout.addWidget(hotkey_group)
         hotkey_layout.addStretch()
 
-        # API设置页
         api_tab = QWidget()
         api_layout = QVBoxLayout(api_tab)
 
@@ -109,13 +98,11 @@ class UiSettings(QDialog):
         api_layout.addWidget(api_group)
         api_layout.addStretch()
 
-        # 添加标签页
         tab_widget.addTab(hotkey_tab, "快捷键")
         tab_widget.addTab(api_tab, "API设置")
 
         layout.addWidget(tab_widget)
 
-        # 底部按钮
         button_layout = QHBoxLayout()
         button_layout.addStretch()
 

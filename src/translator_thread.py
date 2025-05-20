@@ -1,5 +1,6 @@
-from PySide6.QtCore import Signal, QThread
 import logging
+from PySide6.QtCore import Signal, QThread
+
 from translator import Translator
 
 logger = logging.getLogger(__name__)
@@ -8,7 +9,7 @@ logger = logging.getLogger(__name__)
 class TranslatorThread(QThread):
     translation_done = Signal(str, str, dict)
     translation_error = Signal(str)
-    translation_progress = Signal(str)  # 流式翻译进度信号
+    translation_progress = Signal(str)
 
     def __init__(self, translator: Translator):
         super().__init__()
@@ -16,8 +17,8 @@ class TranslatorThread(QThread):
         self.text_to_translate = ""
         self.target_lang = "Chinese"
         self.is_running = False
-        self.use_stream = True  # 默认使用流式翻译
-        logger.info("Initialization of Translator Thread is completed.")
+        self.use_stream = True
+        logger.info("翻译线程的初始化已完成")
 
     def set_text(self, text):
         self.text_to_translate = text
