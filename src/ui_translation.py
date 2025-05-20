@@ -143,6 +143,12 @@ class UiTranslation(QMainWindow):
             }
         """)
 
+        # 添加token使用状态标签
+        self.token_label = QLabel()
+        self.token_label.setAlignment(Qt.AlignLeft)
+        self.token_label.setFont(QFont("Consolas", 9, QFont.Bold))
+        layout.addWidget(self.token_label)
+        
         logger.info("TranslationWindow init done.")
         
     def mousePressEvent(self, event):
@@ -167,7 +173,7 @@ class UiTranslation(QMainWindow):
             super().keyPressEvent(event)
     
     @Slot(str)
-    def set_translation(self, text, translated):
+    def set_translation(self, text, translated, usage=None):
         delimiter = "——-——" * 9
         self.current_translation = translated
         self.text_area.setText(f"{text}\n{delimiter}\n{translated}")
@@ -175,6 +181,26 @@ class UiTranslation(QMainWindow):
         self.text_area.verticalScrollBar().setValue(
             self.text_area.verticalScrollBar().maximum()
         )
+
+        # 显示token使用情况
+        if usage:
+            prompt = usage.get("prompt_tokens", 0)
+            completion = usage.get("completion_tokens", 0)
+            total = usage.get("total_tokens", 0)
+            
+            model_name = usage.get("model", "")
+            
+            if "turbo" in model_name.lower():
+                prompt_cost = 0.001 * prompt / 1000  # 0.001元每千Token
+                completion_cost = 0.003 * completion / 1000  # 0.003元每千Token
+            else:
+                prompt_cost = 0.015 * prompt / 1000  # 0.015元每千Token
+                completion_cost = 0.045 * completion / 1000  # 0.045元每千Token
+
+            total_cost = prompt_cost + completion_cost
+            cost_str = f"{prompt_cost:.4f}+{completion_cost:.4f}={total_cost:.4f}元"
+            self.token_label.setText(f"😭Token: {prompt}+{completion}={total} | 💰Cost: {cost_str}")
+
         self.progress_bar.hide()
         self.show()
         self.activateWindow()

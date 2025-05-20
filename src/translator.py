@@ -17,7 +17,12 @@ class AliyuncsTranslator(Translator):
         self.api_key = self.config.get("api_key", "")
         self.api_url = self.config.get("api_url", "")
         self.api_model = self.config.get("api_model", "")
-        
+        self.last_usage = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "model": self.api_model
+        }
         if not self.api_key:
             logger.error("未提供API密钥，翻译功能将不可用")
         
@@ -91,12 +96,15 @@ class AliyuncsTranslator(Translator):
         
         data = {
             "model": self.api_model,
-            "stream": True,
             "messages": [{"role": "user", "content": text}],
             "translation_options": {
                 "source_lang": "auto",
                 "target_lang": target_lang
             },
+            "stream": True,
+            "stream_options": {
+                "include_usage": True
+            }
         }
         
         try:
@@ -110,6 +118,8 @@ class AliyuncsTranslator(Translator):
             if response.status_code != 200:
                 raise Exception(f"API错误: {response.status_code} - {response.text}")
             
+            self.reset_last_usage()
+            
             for line in response.iter_lines():
                 if line:
                     line = line.decode('utf-8')
@@ -120,20 +130,39 @@ class AliyuncsTranslator(Translator):
                             
                         try:
                             chunk = json.loads(json_str)
+                        except json.JSONDecodeError as e:
+                            logger.error(f"无法解析 JSON: {json_str}, 错误: {e}")
+                        
+                        if chunk['choices']:
                             content = chunk['choices'][0]['delta'].get('content', '')
-                            
                             if content:
                                 if callback:
                                     callback(content)
-                                    
-                        except json.JSONDecodeError as e:
-                            logger.error(f"无法解析 JSON: {json_str}, 错误: {e}")
+                        else:
+                            self.last_usage = {
+                                "prompt_tokens": chunk['usage'].get('prompt_tokens', 0),
+                                "completion_tokens": chunk['usage'].get('completion_tokens', 0),
+                                "total_tokens": chunk['usage'].get('total_tokens', 0),
+                                "model": chunk['model'],
+                            }
             
             logger.info(f"原文：{text}")
             logger.info(f"译文({target_lang})：{content}")
+            logger.info(f"Token使用: {self.last_usage}")
             
             return content
             
         except Exception as e:
             logger.error(f"流式翻译过程中发生错误: {e}")
             raise
+
+    def reset_last_usage(self):
+        self.last_usage = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "model": self.api_model
+        }
+
+    def get_last_usage(self):
+        return self.last_usage

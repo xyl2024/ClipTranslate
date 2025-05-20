@@ -5,7 +5,7 @@ from translator import Translator
 logger = logging.getLogger(__name__)
 
 class TranslatorThread(QThread):
-    translation_done = Signal(str, str)
+    translation_done = Signal(str, str, dict)
     translation_error = Signal(str)
     translation_progress = Signal(str)  # 流式翻译进度信号
 
@@ -37,11 +37,13 @@ class TranslatorThread(QThread):
                     self.target_lang, 
                     callback=self.emit_progress
                 )
+                usage = self.translator.get_last_usage()
             else:
                 # 使用普通翻译
                 result = self.translator.translate(self.text_to_translate, self.target_lang)
                 
-            self.translation_done.emit(self.text_to_translate, result)
+            # 最后发送translation_done信号
+            self.translation_done.emit(self.text_to_translate, result, usage)
         except Exception as e:
             self.translation_error.emit(str(e))
         finally:
