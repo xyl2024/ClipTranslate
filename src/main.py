@@ -207,7 +207,7 @@ class App:
         tray_menu.addAction(quit_action)
 
         self.tray_icon.setContextMenu(tray_menu)
-        self.tray_icon.setToolTip("中英互译工具")
+        self.tray_icon.setToolTip("ClipTranslate")
         self.tray_icon.show()
         self.tray_icon.activated.connect(self.tray_icon_activated)
 
