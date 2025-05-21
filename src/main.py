@@ -1,3 +1,4 @@
+import re
 import sys
 import keyboard
 import pyperclip
@@ -6,8 +7,8 @@ import logging.handlers
 from pathlib import Path
 from datetime import datetime
 from PySide6.QtGui import QAction
-from PySide6.QtCore import Slot, QTimer
-from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
+from PySide6.QtCore import Slot, QTimer, Qt
+from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QMessageBox
 
 from ui_translation import UiTranslation
 from translator import QwenTranslator
@@ -88,16 +89,84 @@ class App:
         logger.info("应用程序的初始化已完成")
 
     def translate_clipboard(self, target_lang="Chinese"):
-        if self.translator_thread.is_running:
-            return
+        try:
+            logger.info(f"开始处理剪贴板翻译请求，目标语言：{target_lang}")
+            
+            if self.translator_thread.is_running:
+                logger.info("翻译线程正在处理其他请求，忽略此次请求")
+                return
 
-        text = pyperclip.paste()
-        if not text.strip():
-            self.ui_translation.set_translation("剪贴板为空", "The clipboard is empty")
-            return
+            text = pyperclip.paste()
+            if not text.strip():
+                logger.info("剪贴板无文本内容")
+                self.ui_translation.set_translation("剪贴板无文本内容", "The clipboard has no text content")
+                return
 
-        self.start_translation(text, target_lang)
-        self.ui_translation.show_loading(text)
+            exceeds_threshold, message, is_chinese_text = self.detect_text_type_and_check_length(text)
+            logger.info(f"文本长度检查结果：超过阈值={exceeds_threshold}，是中文={is_chinese_text}")
+            
+            if exceeds_threshold:
+                logger.info("文本超过阈值，显示确认对话框")
+                
+                dialog_result = self.show_simple_confirmation(
+                    "ClipTranslate 提示", 
+                    message, 
+                    "⚠️翻译长文本可能会：\n1.消耗很多的Tokens;\n2.达到模型上下文限制",
+                )
+                
+                logger.info(f"用户对话框选择结果：{dialog_result}")
+                
+                if not dialog_result:
+                    logger.info("用户选择不继续翻译，取消翻译流程")
+                    return
+            
+            logger.info("开始执行翻译请求")
+            self.start_translation(text, target_lang)
+            self.ui_translation.show_loading(text)
+        
+        except Exception as e:
+            logger.exception(f"翻译剪贴板过程中发生异常: {str(e)}")
+
+    def show_simple_confirmation(self, title, message, detail):
+        try:
+            logger.info(f"显示确认对话框: {title}")
+            
+            msg_box = QMessageBox(self.ui_translation)  # 使用父窗口，关键
+            msg_box.setWindowTitle(title)
+            msg_box.setText(message)
+            msg_box.setInformativeText(detail)
+            msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            msg_box.setDefaultButton(QMessageBox.No)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowFlags(msg_box.windowFlags() | Qt.WindowStaysOnTopHint)
+            
+            result = msg_box.exec()
+            logger.info(f"result={result}, Yes={QMessageBox.Yes}, No={QMessageBox.No}")
+            return result == QMessageBox.Yes
+            
+        except Exception as e:
+            logger.exception(f"显示确认对话框时发生异常: {str(e)}")
+            return False
+
+    def detect_text_type_and_check_length(self, text):
+        chinese_threshold = self.config_manager.get("chinese_threshold", 300)
+        english_threshold = self.config_manager.get("english_threshold", 1000)
+        
+        if not text:
+            return False, "", False
+        # 这里判断文本类型采用简单的方式：
+        # 根据前30个字符的中文比例判断
+        sample_text = text[:min(30, len(text))]
+        chinese_char_count = len(re.findall(r'[\u4e00-\u9fff]', sample_text))
+        is_chinese_text = chinese_char_count / len(sample_text) > 0.5 if sample_text else False
+        threshold = chinese_threshold if is_chinese_text else english_threshold
+        text_type = "中文" if is_chinese_text else "英文"
+        
+        if len(text) > threshold:
+            message = f"剪贴板文本(主要为{text_type})长度: {len(text)} 字符\n阈值: {threshold} 字符\n是否继续翻译？"
+            return True, message, is_chinese_text
+        
+        return False, "", is_chinese_text
 
     def setup_tray_icon(self):
         self.tray_icon = QSystemTrayIcon(self.app)
