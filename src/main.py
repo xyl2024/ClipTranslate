@@ -73,12 +73,14 @@ class App:
         self.translator_thread.translation_done.connect(
             self.ui_translation.set_translation
         )
-        self.translator_thread.translation_error.connect(self.ui_translation.show_error)
+        self.translator_thread.translation_error.connect(
+            self.ui_translation.show_error
+        )
         self.translator_thread.translation_progress.connect(
             self.ui_translation.update_translation_progress
         )
 
-        self.settings_window = None
+        self.ui_settings = None
 
         self.setup_hotkeys()
         self.setup_tray_icon()
@@ -194,20 +196,20 @@ class App:
             self.translator_thread.start()
 
     def show_settings(self):
-        if not self.settings_window:
-            self.settings_window = UiSettings(self.config_manager.get_config(), None)
-            self.settings_window.settings_saved.connect(self.apply_settings)
+        if not self.ui_settings:
+            self.ui_settings = UiSettings(self.config_manager.get_config(), None)
+            self.ui_settings.settings_saved.connect(self.apply_settings)
 
-        if not self.settings_window.isVisible():
-            self.settings_window.load_config()
+        if not self.ui_settings.isVisible():
+            self.ui_settings.load_config()
 
-        self.settings_window.show()
-        self.settings_window.raise_()
-        self.settings_window.activateWindow()
+        self.ui_settings.show()
+        self.ui_settings.raise_()
+        self.ui_settings.activateWindow()
 
     def show_settings_with_message(self, message):
         self.show_settings()
-        if self.settings_window:
+        if self.ui_settings:
             self.tray_icon.showMessage(
                 "设置提示", message, QSystemTrayIcon.Information, 5000
             )
@@ -261,9 +263,9 @@ class App:
                 self.translator_thread.quit()
                 self.translator_thread.wait()
 
-            if self.settings_window:
-                self.settings_window.close()
-                self.settings_window = None
+            if self.ui_settings:
+                self.ui_settings.close()
+                self.ui_settings = None
 
 
 if __name__ == "__main__":
