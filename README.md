@@ -61,7 +61,9 @@ $ uv run src/main.py
   "BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
   "MODEL": "qwen-mt-turbo", // 或者 "qwen-mt-plus"，更贵的模型
   "shortcut_translate_to_chinese": "f2",
-  "shortcut_translate_to_english": "f10"
+  "shortcut_translate_to_english": "f10",
+  "chinese_threshold": 300,
+  "english_threshold": 1000
 }
 ```
 
