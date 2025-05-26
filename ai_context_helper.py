@@ -38,7 +38,7 @@ if __name__ == '__main__':
     output_file = 'output.txt'
     
     # 指定需要过滤的文件列表和目录列表
-    exclude_files = ["ai_context_helper.py", "check_env.py"]
+    exclude_files = ["ai_context_helper.py", "check_env.py", "build.py"]
     exclude_dirs = ["test", "log", "resources", "config", "experiments"]
 
     file_cnt = read_py_files_and_save(output_file, exclude_files, exclude_dirs)
