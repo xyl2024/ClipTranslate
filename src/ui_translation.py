@@ -101,6 +101,27 @@ CLOSE_BUTTON_CSS="""
     }
 """
 
+PROGRESS_BAR_CSS = """
+    QProgressBar {
+        border: 2px solid #CCCCCC;
+        border-radius: 10px;
+        background-color: #FFFFFF;
+        text-align: center;
+        font-weight: bold;
+        color: #FFFFFF;
+        height: 8px;
+    }
+    
+    QProgressBar::chunk {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                   stop:0 #FF6B6B, stop:0.2 #FFE66D,
+                                   stop:0.4 #4ECDC4, stop:0.6 #45B7D1,
+                                   stop:0.8 #96CEB4, stop:1 #FFEAA7);
+        border-radius: 8px;
+        margin: 1px;
+    }
+"""
+
 UITRANSLATION_CSS="""
     QMainWindow {
         background-color: #D2DCDF;
@@ -154,6 +175,7 @@ class UiTranslation(QMainWindow):
         self.progress_bar = QProgressBar()
         self.progress_bar.setTextVisible(False)
         self.progress_bar.setRange(0, 0)  # 不确定模式
+        self.progress_bar.setStyleSheet(PROGRESS_BAR_CSS)
         self.progress_bar.hide()
         layout.addWidget(self.progress_bar)
 
