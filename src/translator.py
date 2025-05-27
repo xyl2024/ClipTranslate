@@ -252,7 +252,7 @@ class ChatTranslator(Translator):
 
             for line in response.iter_lines():
                 if line:
-                    logger.debug(line.decode("utf-8"))
+                    # logger.debug(line.decode("utf-8"))
                     line = line.decode("utf-8")
                     if line.startswith("data: "):
                         json_str = line[6:]  # 跳过 "data: " 前缀
@@ -267,7 +267,7 @@ class ChatTranslator(Translator):
 
                         if "choices" in chunk and chunk["choices"]:
                             delta = chunk["choices"][0].get("delta", {})
-                            logger.debug(delta)
+                            # logger.debug(delta)
                             content = delta.get("content", "")
                             if content:
                                 full_content += content

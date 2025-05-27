@@ -25,7 +25,7 @@ def setup_logger():
     log_file = log_dir / f"translator_{datetime.now().strftime('%Y%m%d')}.log"
 
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     file_handler = logging.handlers.RotatingFileHandler(
         log_file, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8"
@@ -33,7 +33,7 @@ def setup_logger():
     file_handler.setLevel(logging.INFO)
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(logging.DEBUG)
 
     formatter = logging.Formatter(
         "[%(asctime)s][%(levelname)s][%(threadName)s][%(filename)s:%(lineno)d]: %(message)s"
@@ -48,6 +48,23 @@ def setup_logger():
 
 
 logger = setup_logger()
+
+
+def clean_string(text):
+    # 将连续的空格替换为单个空格
+    text = re.sub(r" +", " ", text)
+
+    # 分割成行并处理每一行
+    lines = text.split("\n")
+
+    # 清理每行的首尾空格，并过滤掉空行
+    cleaned_lines = []
+    for line in lines:
+        stripped_line = line.strip()
+        if stripped_line:  # 只保留非空行
+            cleaned_lines.append(stripped_line)
+
+    return "\n".join(cleaned_lines)
 
 
 class App:
@@ -103,7 +120,9 @@ class App:
                 logger.info("翻译线程正在处理其他请求，忽略此次请求")
                 return
 
-            text = pyperclip.paste()
+            text = clean_string(pyperclip.paste())
+            logger.debug(f"\n{text}")
+
             if not text.strip():
                 logger.info("剪贴板无文本内容")
                 self.ui_translation.set_translation(
