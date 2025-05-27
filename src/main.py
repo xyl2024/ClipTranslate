@@ -11,7 +11,7 @@ from PySide6.QtCore import Slot, QTimer, Qt
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QMessageBox
 
 from ui_translation import UiTranslation
-from translator import QwenTranslator
+from translator import QwenTranslator, ChatTranslator
 from translator_thread import TranslatorThread
 from config_manager import ConfigManager
 from ui_settings import UiSettings
@@ -62,9 +62,18 @@ class App:
         self.ui_translation = UiTranslation()
 
         try:
-            self.translator = QwenTranslator(self.config_manager.get_config())
+            config = self.config_manager.get_config()
+            translator_type = config.get("translator_type", "qwen")
+            
+            if translator_type == "chat":
+                self.translator = ChatTranslator(config)
+                logger.info("使用通用聊天模型翻译器")
+            else:
+                self.translator = QwenTranslator(config)
+                logger.info("使用Qwen专用翻译器")
         except ValueError as e:
             logger.warning(f"初始化翻译器警告: {e}")
+            logger.info("默认使用Qwen专用翻译器")
             self.translator = QwenTranslator({})
             QTimer.singleShot(
                 1000, lambda: self.show_settings_with_message("请设置API密钥")
@@ -288,7 +297,22 @@ class App:
         try:
             old_config = self.config_manager.get_config().copy()
             self.config_manager.update_config(new_config)
-            self.translator.update_config(new_config)
+
+            # 检查翻译器类型是否改变
+            old_translator_type = old_config.get("translator_type", "qwen")
+            new_translator_type = new_config.get("translator_type", "qwen")
+            
+            if old_translator_type != new_translator_type:
+                if new_translator_type == "chat":
+                    self.translator = ChatTranslator(new_config)
+                    logger.info("切换到通用聊天模型翻译器")
+                else:
+                    self.translator = QwenTranslator(new_config)
+                    logger.info("切换到Qwen专用翻译器")
+                
+                self.translator_thread.translator = self.translator
+            else:
+                self.translator.update_config(new_config)
 
             if old_config.get("hotkey_to_chinese") != new_config.get(
                 "hotkey_to_chinese"

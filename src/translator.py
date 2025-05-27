@@ -16,9 +16,9 @@ class Translator:
 class QwenTranslator(Translator):
     def __init__(self, config=None):
         self.config = config or {}
-        self.api_key = self.config.get("api_key", "")
-        self.api_url = self.config.get("api_url", "")
-        self.api_model = self.config.get("api_model", "")
+        self.api_key = self.config.get("qwen_api_key", "")
+        self.api_url = self.config.get("qwen_api_url", "")
+        self.api_model = self.config.get("qwen_api_model", "")
         self.last_usage = {
             "prompt_tokens": 0,
             "completion_tokens": 0,
@@ -32,9 +32,9 @@ class QwenTranslator(Translator):
 
     def update_config(self, config):
         self.config = config
-        self.api_key = config.get("api_key", self.api_key)
-        self.api_url = config.get("api_url", self.api_url)
-        self.api_model = config.get("api_model", self.api_model)
+        self.api_key = config.get("qwen_api_key", self.api_key)
+        self.api_url = config.get("qwen_api_url", self.api_url)
+        self.api_model = config.get("qwen_api_model", self.api_model)
         logger.info("翻译器配置已更新")
 
     def translate(self, text, target_lang="Chinese"):
@@ -148,6 +148,154 @@ class QwenTranslator(Translator):
         except Exception as e:
             logger.error(f"流式翻译过程中发生错误: {e}")
             raise
+
+    def reset_last_usage(self):
+        self.last_usage = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "model": self.api_model,
+        }
+
+    def get_last_usage(self):
+        return self.last_usage
+
+
+class ChatTranslator(Translator):
+    def __init__(self, config=None):
+        self.config = config or {}
+        self.api_key = self.config.get("chat_api_key", "")
+        self.api_url = self.config.get("chat_api_url", "")
+        self.api_model = self.config.get("chat_api_model", "")
+        self.last_usage = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "model": self.api_model,
+        }
+        
+        if not self.api_key:
+            logger.error("未提供API密钥，翻译功能将不可用")
+            
+        logger.info("通用聊天翻译器初始化完成")
+
+    def _build_translation_prompt(self, text, target_lang):
+        """构建翻译提示词"""
+        if target_lang == "Chinese":
+            system_prompt = """你是一个专业的翻译助手。请将用户提供的文本翻译成中文。
+
+翻译要求：
+1. 保持原文的语气和风格
+2. 确保翻译准确、自然、流畅
+3. 对于专业术语，优先使用标准译名
+4. 直接输出翻译结果，不要添加任何解释或说明
+
+请翻译以下文本："""
+            
+        else:  # English
+            system_prompt = """You are a professional translation assistant. Please translate the user's text into English.
+
+Translation requirements:
+1. Maintain the tone and style of the original text
+2. Ensure accurate, natural, and fluent translation
+3. Use standard terminology for technical terms
+4. Output only the translation result without any explanations
+
+Please translate the following text:"""
+        
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text}
+        ]
+
+    def translate_stream(self, text, target_lang="Chinese", callback=None):
+        if target_lang not in ["Chinese", "English"]:
+            target_lang = "Chinese"
+
+        if not self.api_key:
+            raise ValueError("未配置API密钥，请在设置中配置")
+
+        if not self.api_url:
+            raise ValueError("未配置API URL，请在设置中配置")
+
+        if not self.api_model:
+            raise ValueError("未配置API模型，请在设置中配置")
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+
+        messages = self._build_translation_prompt(text, target_lang)
+        
+        data = {
+            "model": self.api_model,
+            "messages": messages,
+            "stream": True,
+            "temperature": 0.3,  # 降低随机性，提高翻译一致性
+        }
+
+        try:
+            response = requests.post(
+                self.api_url,
+                headers=headers,
+                json=data,
+                stream=True,
+            )
+
+            if response.status_code != 200:
+                raise Exception(f"API错误: {response.status_code} - {response.text}")
+
+            self.reset_last_usage()
+            full_content = ""
+
+            for line in response.iter_lines():
+                if line:
+                    line = line.decode("utf-8")
+                    if line.startswith("data: "):
+                        json_str = line[6:]  # 跳过 "data: " 前缀
+                        if json_str.strip() == "[DONE]":  # 流结束标记
+                            break
+
+                        try:
+                            chunk = json.loads(json_str)
+                        except json.JSONDecodeError as e:
+                            logger.error(f"无法解析 JSON: {json_str}, 错误: {e}")
+                            continue
+
+                        if "choices" in chunk and chunk["choices"]:
+                            delta = chunk["choices"][0].get("delta", {})
+                            content = delta.get("content", "")
+                            if content:
+                                full_content += content
+                                if callback:
+                                    full_content(content)
+                        
+                        # 处理使用量统计（如果有）
+                        if "usage" in chunk:
+                            self.last_usage = {
+                                "prompt_tokens": chunk["usage"].get("prompt_tokens", 0),
+                                "completion_tokens": chunk["usage"].get("completion_tokens", 0),
+                                "total_tokens": chunk["usage"].get("total_tokens", 0),
+                                "model": chunk.get("model", self.api_model),
+                            }
+
+            logger.info(f"原文：{text[:50]}...")
+            logger.info(f"译文({target_lang})：{full_content[:50]}...")
+            logger.info(f"Token使用量: {self.last_usage}")
+            
+            return full_content
+
+        except Exception as e:
+            logger.error(f"流式翻译过程中发生错误: {e}")
+            raise
+
+    def update_config(self, config):
+        self.config = config
+        self.api_key = config.get("chat_api_key", self.api_key)
+        self.api_url = config.get("chat_api_url", self.api_url)
+        self.api_model = config.get("chat_api_model", self.api_model)
+        logger.info("通用聊天翻译器配置已更新")
 
     def reset_last_usage(self):
         self.last_usage = {
