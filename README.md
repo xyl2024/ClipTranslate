@@ -9,6 +9,7 @@ ClipTranslate 是一款 Windows 桌面便捷翻译工具，允许用户通过全
 - 通过全局快捷键触发翻译
 - 自动获取剪贴板文本内容
 - 调用阿里云千问翻译模型API进行翻译
+- 调用通用聊天大模型API进行翻译
 - 在独立窗口中同时显示原文和译文
 
 Qwen-MT模型价格：https://help.aliyun.com/zh/model-studio/machine-translation
@@ -33,7 +34,7 @@ $ uv run src/main.py
 
 1. 运行应用程序后，在系统托盘区找到 ClipTranslate 图标
 2. 右键点击图标，选择"设置"
-3. 输入您的阿里云千问翻译API密钥
+3. 输入您的阿里云千问翻译API密钥/聊天大模型API密钥（例如硅基流动的免费模型Qwen/Qwen3-8B）
 4. 如需要，可以自定义翻译快捷键
 5. 点击"保存"完成配置
 
@@ -42,7 +43,7 @@ $ uv run src/main.py
 1. 复制需要翻译的文本（Ctrl+C）
 2. 按下配置的快捷键：
    - 默认F2键：将文本翻译为中文
-   - 默认F10键：将文本翻译为英文
+   - 默认F4键：将文本翻译为英文
 3. 翻译窗口将自动显示，流式输出，包含原文和译文
 4. 可点击"复制译文"按钮将译文复制到剪贴板
 5. 按ESC键或点击关闭按钮可隐藏翻译窗口
@@ -53,25 +54,29 @@ $ uv run src/main.py
 
 ## 配置文件
 
-配置文件`config.json`位于 `HOME/.cliptranslate` 目录下，格式如下：
+配置文件 `config.json` 位于 `HOME/.cliptranslate` 目录下，格式如下：
 
 ```json
 {
-  "API_KEY": "YOUR_API_KEY",
-  "BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
-  "MODEL": "qwen-mt-turbo", // 或者 "qwen-mt-plus"，更贵的模型
-  "shortcut_translate_to_chinese": "f2",
-  "shortcut_translate_to_english": "f10",
-  "chinese_threshold": 300,
-  "english_threshold": 1000
+    "hotkey_to_chinese": "f2",
+    "hotkey_to_english": "f4",
+    "chinese_threshold": 300,
+    "english_threshold": 1000,
+    "translator_type": "chat",
+    "qwen_api_key": "sk-************************************************",
+    "qwen_api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+    "qwen_api_model": "qwen-mt-plus",
+    "chat_api_key": "sk-************************************************",
+    "chat_api_url": "https://api.siliconflow.cn/v1/chat/completions",
+    "chat_api_model": "Qwen/Qwen3-8B"
 }
 ```
 
+## 日志文件
+
+日志文件位于 `HOME/.cliptranslate_logs`。
+
 ## 注意事项
 
-- 翻译服务依赖于阿里云千问API，会产生API调用费用
+- 该翻译服务依赖于大模型，会产生API调用费用
 - 全局快捷键功能仅在 Windows 平台上可用
-
-## 许可证
-
-[MIT](LICENSE)
