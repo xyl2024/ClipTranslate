@@ -69,7 +69,7 @@ TEXT_AREA_CSS = """
     }
 """
 
-COPY_BUTTON_CSS="""
+COPY_BUTTON_CSS = """
     QPushButton {
         background-color: #4CAF50;
         color: white;
@@ -81,7 +81,7 @@ COPY_BUTTON_CSS="""
     }
 """
 
-COPYED_BUTTON_CSS="""
+COPYED_BUTTON_CSS = """
     QPushButton {
         background-color: #2196F3;
         color: white;
@@ -90,7 +90,7 @@ COPYED_BUTTON_CSS="""
     }
 """
 
-CLOSE_BUTTON_CSS="""
+CLOSE_BUTTON_CSS = """
     QPushButton {
         background-color: #f44336;
         color: white;
@@ -122,11 +122,12 @@ PROGRESS_BAR_CSS = """
     }
 """
 
-UITRANSLATION_CSS="""
+UITRANSLATION_CSS = """
     QMainWindow {
         background-color: #D2DCDF;
     }
 """
+
 
 class UiTranslation(QMainWindow):
     def __init__(self):
@@ -183,7 +184,7 @@ class UiTranslation(QMainWindow):
         self.token_label.setAlignment(Qt.AlignLeft)
         self.token_label.setFont(QFont("Consolas", 9, QFont.Bold))
         layout.addWidget(self.token_label)
-        
+
         self.setStyleSheet(UITRANSLATION_CSS)
         logger.info("翻译窗口初始化完成")
 
@@ -213,7 +214,7 @@ class UiTranslation(QMainWindow):
         delimiter = "——-——" * 9
         self.current_translation = translated
         self.text_area.setText(f"{text}\n{delimiter}\n{translated}")
-        
+
         # 滚动到底部
         self.text_area.verticalScrollBar().setValue(
             self.text_area.verticalScrollBar().maximum()

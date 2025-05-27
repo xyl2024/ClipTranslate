@@ -4,7 +4,9 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_QWEN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+DEFAULT_QWEN_BASE_URL = (
+    "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+)
 DEFAULT_QWEN_MODEL = "qwen-mt-turbo"
 DEFAULT_CHAT_BASE_URL = "https://api.openai.com/v1/chat/completions"
 DEFAULT_CHAT_MODEL = "gpt-3.5-turbo"
@@ -17,12 +19,10 @@ class ConfigManager:
         "hotkey_to_chinese": DEFAULT_HOTKEY_TO_CH,
         "hotkey_to_english": DEFAULT_HOTKEY_TO_EN,
         "translator_type": "qwen",  # 翻译器类型：qwen 或 chat
-        
         # Qwen专用翻译模型配置
         "qwen_api_key": "",
         "qwen_api_url": DEFAULT_QWEN_BASE_URL,
         "qwen_api_model": DEFAULT_QWEN_MODEL,
-        
         # 通用聊天模型配置
         "chat_api_key": "",
         "chat_api_url": DEFAULT_CHAT_BASE_URL,
@@ -41,10 +41,10 @@ class ConfigManager:
             if self.config_file.exists():
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     config = json.load(f)
-                    
+
                     # 配置迁移：处理旧版本的配置格式
                     self._migrate_old_config(config)
-                    
+
                     # 确保所有默认键都存在
                     for key, default_value in self.DEFAULT_CONFIG.items():
                         if key not in config:
@@ -63,21 +63,21 @@ class ConfigManager:
         if "api_key" in config and not config.get("qwen_api_key"):
             config["qwen_api_key"] = config["api_key"]
             logger.info("迁移旧配置：api_key -> qwen_api_key")
-        
+
         if "api_url" in config and not config.get("qwen_api_url"):
             config["qwen_api_url"] = config["api_url"]
             logger.info("迁移旧配置：api_url -> qwen_api_url")
-        
+
         if "api_model" in config and not config.get("qwen_api_model"):
             config["qwen_api_model"] = config["api_model"]
             logger.info("迁移旧配置：api_model -> qwen_api_model")
-        
+
         old_keys = ["api_key", "api_url", "api_model"]
         for key in old_keys:
             if key in config:
                 del config[key]
                 logger.info(f"删除旧配置键: {key}")
-        
+
         if "translator_type" not in config:
             config["translator_type"] = "qwen"
 

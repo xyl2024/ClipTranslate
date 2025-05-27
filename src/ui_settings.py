@@ -93,19 +93,25 @@ class UiSettings(QDialog):
         self.translator_type_combo = QComboBox()
         self.translator_type_combo.addItem("Qwen专用翻译模型", "qwen")
         self.translator_type_combo.addItem("通用聊天模型", "chat")
-        self.translator_type_combo.currentTextChanged.connect(self.on_translator_type_changed)
+        self.translator_type_combo.currentTextChanged.connect(
+            self.on_translator_type_changed
+        )
         translator_form.addRow("翻译器类型:", self.translator_type_combo)
 
         # 添加说明标签
         self.translator_help_label = QLabel()
         self.translator_help_label.setWordWrap(True)
-        self.translator_help_label.setStyleSheet("color: #666; font-size: 11px; margin: 5px;")
+        self.translator_help_label.setStyleSheet(
+            "color: #666; font-size: 11px; margin: 5px;"
+        )
         translator_form.addRow("", self.translator_help_label)
 
         # 添加当前配置状态提示
         self.config_status_label = QLabel()
         self.config_status_label.setWordWrap(True)
-        self.config_status_label.setStyleSheet("color: #2E86AB; font-size: 10px; margin: 5px; font-weight: bold;")
+        self.config_status_label.setStyleSheet(
+            "color: #2E86AB; font-size: 10px; margin: 5px; font-weight: bold;"
+        )
         translator_form.addRow("", self.config_status_label)
 
         api_layout.addWidget(translator_group)
@@ -174,12 +180,16 @@ class UiSettings(QDialog):
     def on_translator_type_changed(self):
         current_data = self.translator_type_combo.currentData()
         if current_data == "qwen":
-            help_text = ("Qwen专用翻译模型：使用阿里云的Qwen-MT模型，专门为翻译任务优化，"
-                       "翻译质量高，速度快。适合使用阿里云DashScope API。")
+            help_text = (
+                "Qwen专用翻译模型：使用阿里云的Qwen-MT模型，专门为翻译任务优化，"
+                "翻译质量高，速度快。适合使用阿里云DashScope API。"
+            )
         else:
-            help_text = ("通用聊天模型：使用标准的聊天API格式，通过提示词进行翻译。"
-                       "兼容OpenAI API格式，支持更多模型选择（如GPT、Claude、本地模型等）。")
-        
+            help_text = (
+                "通用聊天模型：使用标准的聊天API格式，通过提示词进行翻译。"
+                "兼容OpenAI API格式，支持更多模型选择（如GPT、Claude、本地模型等）。"
+            )
+
         self.translator_help_label.setText(help_text)
         self._update_config_status()
 
@@ -195,32 +205,32 @@ class UiSettings(QDialog):
             has_url = bool(self.chat_api_url_edit.text().strip())
             has_model = bool(self.chat_api_model_edit.text().strip())
             status_text = f"Chat配置状态：API密钥 {'✓' if has_key else '✗'} | API URL {'✓' if has_url else '✗'} | 模型 {'✓' if has_model else '✗'}"
-        
+
         self.config_status_label.setText(status_text)
 
     def load_config(self):
         self.chinese_hotkey_edit.setText(self.config.get("hotkey_to_chinese", "f2"))
         self.english_hotkey_edit.setText(self.config.get("hotkey_to_english", "f3"))
-        
+
         # 加载Qwen配置
         self.qwen_api_key_edit.setText(self.config.get("qwen_api_key", ""))
         self.qwen_api_url_edit.setText(self.config.get("qwen_api_url", ""))
         self.qwen_api_model_edit.setText(self.config.get("qwen_api_model", ""))
-        
+
         # 加载Chat配置
         self.chat_api_key_edit.setText(self.config.get("chat_api_key", ""))
         self.chat_api_url_edit.setText(self.config.get("chat_api_url", ""))
         self.chat_api_model_edit.setText(self.config.get("chat_api_model", ""))
-        
+
         # 设置翻译器类型
         translator_type = self.config.get("translator_type", "qwen")
         index = self.translator_type_combo.findData(translator_type)
         if index >= 0:
             self.translator_type_combo.setCurrentIndex(index)
-        
+
         # 触发帮助文本更新
         self.on_translator_type_changed()
-        
+
         # 连接文本变化事件以实时更新状态
         self.qwen_api_key_edit.textChanged.connect(self._update_config_status)
         self.qwen_api_url_edit.textChanged.connect(self._update_config_status)
@@ -234,12 +244,10 @@ class UiSettings(QDialog):
             "hotkey_to_chinese": self.chinese_hotkey_edit.text(),
             "hotkey_to_english": self.english_hotkey_edit.text(),
             "translator_type": self.translator_type_combo.currentData(),
-            
             # Qwen配置
             "qwen_api_key": self.qwen_api_key_edit.text(),
             "qwen_api_url": self.qwen_api_url_edit.text(),
             "qwen_api_model": self.qwen_api_model_edit.text(),
-            
             # Chat配置
             "chat_api_key": self.chat_api_key_edit.text(),
             "chat_api_url": self.chat_api_url_edit.text(),

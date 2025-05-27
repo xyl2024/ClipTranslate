@@ -64,7 +64,7 @@ class App:
         try:
             config = self.config_manager.get_config()
             translator_type = config.get("translator_type", "qwen")
-            
+
             if translator_type == "chat":
                 self.translator = ChatTranslator(config)
                 logger.info("使用通用聊天模型翻译器")
@@ -83,9 +83,7 @@ class App:
         self.translator_thread.translation_done.connect(
             self.ui_translation.set_translation
         )
-        self.translator_thread.translation_error.connect(
-            self.ui_translation.show_error
-        )
+        self.translator_thread.translation_error.connect(self.ui_translation.show_error)
         self.translator_thread.translation_progress.connect(
             self.ui_translation.update_translation_progress
         )
@@ -100,7 +98,7 @@ class App:
     def translate_clipboard(self, target_lang="Chinese"):
         try:
             logger.info(f"开始处理剪贴板翻译请求，目标语言：{target_lang}")
-            
+
             if self.translator_thread.is_running:
                 logger.info("翻译线程正在处理其他请求，忽略此次请求")
                 return
@@ -108,38 +106,44 @@ class App:
             text = pyperclip.paste()
             if not text.strip():
                 logger.info("剪贴板无文本内容")
-                self.ui_translation.set_translation("剪贴板无文本内容", "The clipboard has no text content")
+                self.ui_translation.set_translation(
+                    "剪贴板无文本内容", "The clipboard has no text content"
+                )
                 return
 
-            exceeds_threshold, message, is_chinese_text = self.detect_text_type_and_check_length(text)
-            logger.info(f"文本长度检查结果：超过阈值={exceeds_threshold}，是中文={is_chinese_text}")
-            
+            exceeds_threshold, message, is_chinese_text = (
+                self.detect_text_type_and_check_length(text)
+            )
+            logger.info(
+                f"文本长度检查结果：超过阈值={exceeds_threshold}，是中文={is_chinese_text}"
+            )
+
             if exceeds_threshold:
                 logger.info("文本超过阈值，显示确认对话框")
-                
+
                 dialog_result = self.show_simple_confirmation(
-                    "ClipTranslate 提示", 
-                    message, 
+                    "ClipTranslate 提示",
+                    message,
                     "⚠️翻译长文本可能会：\n1.消耗很多的Tokens;\n2.达到模型上下文限制",
                 )
-                
+
                 logger.info(f"用户对话框选择结果：{dialog_result}")
-                
+
                 if not dialog_result:
                     logger.info("用户选择不继续翻译，取消翻译流程")
                     return
-            
+
             logger.info("开始执行翻译请求")
             self.start_translation(text, target_lang)
             self.ui_translation.show_loading(text)
-        
+
         except Exception as e:
             logger.exception(f"翻译剪贴板过程中发生异常: {str(e)}")
 
     def show_simple_confirmation(self, title, message, detail):
         try:
             logger.info(f"显示确认对话框: {title}")
-            
+
             msg_box = QMessageBox(self.ui_translation)  # 使用父窗口，关键
             msg_box.setWindowTitle(title)
             msg_box.setText(message)
@@ -148,11 +152,11 @@ class App:
             msg_box.setDefaultButton(QMessageBox.No)
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowFlags(msg_box.windowFlags() | Qt.WindowStaysOnTopHint)
-            
+
             result = msg_box.exec()
             logger.info(f"result={result}, Yes={QMessageBox.Yes}, No={QMessageBox.No}")
             return result == QMessageBox.Yes
-            
+
         except Exception as e:
             logger.exception(f"显示确认对话框时发生异常: {str(e)}")
             return False
@@ -160,21 +164,23 @@ class App:
     def detect_text_type_and_check_length(self, text):
         chinese_threshold = self.config_manager.get("chinese_threshold", 300)
         english_threshold = self.config_manager.get("english_threshold", 1000)
-        
+
         if not text:
             return False, "", False
         # 这里判断文本类型采用简单的方式：
         # 根据前30个字符的中文比例判断
-        sample_text = text[:min(30, len(text))]
-        chinese_char_count = len(re.findall(r'[\u4e00-\u9fff]', sample_text))
-        is_chinese_text = chinese_char_count / len(sample_text) > 0.5 if sample_text else False
+        sample_text = text[: min(30, len(text))]
+        chinese_char_count = len(re.findall(r"[\u4e00-\u9fff]", sample_text))
+        is_chinese_text = (
+            chinese_char_count / len(sample_text) > 0.5 if sample_text else False
+        )
         threshold = chinese_threshold if is_chinese_text else english_threshold
         text_type = "中文" if is_chinese_text else "英文"
-        
+
         if len(text) > threshold:
             message = f"剪贴板文本(主要为{text_type})长度: {len(text)} 字符\n阈值: {threshold} 字符\n是否继续翻译？"
             return True, message, is_chinese_text
-        
+
         return False, "", is_chinese_text
 
     def setup_tray_icon(self):
@@ -301,7 +307,7 @@ class App:
             # 检查翻译器类型是否改变
             old_translator_type = old_config.get("translator_type", "qwen")
             new_translator_type = new_config.get("translator_type", "qwen")
-            
+
             if old_translator_type != new_translator_type:
                 if new_translator_type == "chat":
                     self.translator = ChatTranslator(new_config)
@@ -309,7 +315,7 @@ class App:
                 else:
                     self.translator = QwenTranslator(new_config)
                     logger.info("切换到Qwen专用翻译器")
-                
+
                 self.translator_thread.translator = self.translator
             else:
                 self.translator.update_config(new_config)

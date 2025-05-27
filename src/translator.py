@@ -4,6 +4,23 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+SEPARATOR = "<user_input>"
+SYSTEM_PROMPT_CH = f"""你是一个专业的翻译助手。请将用户提供的文本翻译成中文。用户提供的文本被一对标签{SEPARATOR}包含。
+翻译要求：
+1. 如果用户输入的文本是中文，直接原封不动地输出原文；
+2. 保持原文的语气和风格，确保翻译准确、自然、流畅；
+3. 对于专业术语，优先使用标准译名；
+4. 如果用户输入的文本是一个句子，直接输出翻译结果，不要添加任何解释或说明；
+5. 如果用户输入的文本是一个英语单词（包括原型、过去时以及进行时等语态），你需要尝试提供对该英语单词的解释，包括词性、读音、一个或多个中文意思以及对应的双语例句；
+"""
+SYSTEM_PROMPT_EN = f"""You are a professional translation assistant. Please translate the user's text into English. The text provided by the user is enclosed within a pair of tags {SEPARATOR}.
+Translation requirements:
+1. If the text input by the user is in English, output the original text as is.
+2. Maintain the tone and style of the original text, ensuring an accurate, natural, and fluent translation.
+3. For professional terms, prefer the standard translated names.
+4. Directly output the translation result without adding any explanations or comments.
+"""
+
 
 class Translator:
     def translate(self, text, target_lang="Chinese"):
@@ -173,39 +190,22 @@ class ChatTranslator(Translator):
             "total_tokens": 0,
             "model": self.api_model,
         }
-        
+
         if not self.api_key:
             logger.error("未提供API密钥，翻译功能将不可用")
-            
+
         logger.info("通用聊天翻译器初始化完成")
 
     def _build_translation_prompt(self, text, target_lang):
         """构建翻译提示词"""
         if target_lang == "Chinese":
-            system_prompt = """你是一个专业的翻译助手。请将用户提供的文本翻译成中文。
+            system_prompt = SYSTEM_PROMPT_CH
+        else:
+            system_prompt = SYSTEM_PROMPT_EN
 
-翻译要求：
-1. 保持原文的语气和风格
-2. 确保翻译准确、自然、流畅
-3. 对于专业术语，优先使用标准译名
-4. 直接输出翻译结果，不要添加任何解释或说明
-
-请翻译以下文本："""
-            
-        else:  # English
-            system_prompt = """You are a professional translation assistant. Please translate the user's text into English.
-
-Translation requirements:
-1. Maintain the tone and style of the original text
-2. Ensure accurate, natural, and fluent translation
-3. Use standard terminology for technical terms
-4. Output only the translation result without any explanations
-
-Please translate the following text:"""
-        
         return [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": text}
+            {"role": "user", "content": SEPARATOR + text + SEPARATOR},
         ]
 
     def translate_stream(self, text, target_lang="Chinese", callback=None):
@@ -227,11 +227,12 @@ Please translate the following text:"""
         }
 
         messages = self._build_translation_prompt(text, target_lang)
-        
+
         data = {
             "model": self.api_model,
             "messages": messages,
             "stream": True,
+            "enable_thinking": False,  # todo，需要适配一下无thinking功能的大模型
             "temperature": 0.3,  # 降低随机性，提高翻译一致性
         }
 
@@ -251,6 +252,7 @@ Please translate the following text:"""
 
             for line in response.iter_lines():
                 if line:
+                    logger.debug(line.decode("utf-8"))
                     line = line.decode("utf-8")
                     if line.startswith("data: "):
                         json_str = line[6:]  # 跳过 "data: " 前缀
@@ -265,25 +267,28 @@ Please translate the following text:"""
 
                         if "choices" in chunk and chunk["choices"]:
                             delta = chunk["choices"][0].get("delta", {})
+                            logger.debug(delta)
                             content = delta.get("content", "")
                             if content:
                                 full_content += content
                                 if callback:
-                                    full_content(content)
-                        
-                        # 处理使用量统计（如果有）
-                        if "usage" in chunk:
-                            self.last_usage = {
-                                "prompt_tokens": chunk["usage"].get("prompt_tokens", 0),
-                                "completion_tokens": chunk["usage"].get("completion_tokens", 0),
-                                "total_tokens": chunk["usage"].get("total_tokens", 0),
-                                "model": chunk.get("model", self.api_model),
-                            }
+                                    callback(full_content)
 
-            logger.info(f"原文：{text[:50]}...")
-            logger.info(f"译文({target_lang})：{full_content[:50]}...")
-            logger.info(f"Token使用量: {self.last_usage}")
-            
+                        # 暂时不统计，建议使用免费模型。
+                        # # 处理使用量统计（如果有）
+                        # if "usage" in chunk:
+                        #     self.last_usage = {
+                        #         "prompt_tokens": chunk["usage"].get("prompt_tokens", 0),
+                        #         "completion_tokens": chunk["usage"].get("completion_tokens", 0),
+                        #         "total_tokens": chunk["usage"].get("total_tokens", 0),
+                        #         "model": chunk.get("model", self.api_model),
+                        #     }
+
+            logger.info(f"原文：{text[:15]}...")
+            logger.info(f"译文({target_lang})：{full_content[:15]}...")
+            # logger.info(f"Token使用量: {self.last_usage}")
+            logger.info(f"翻译模型：{self.last_usage.get('model', '未知')}")
+
             return full_content
 
         except Exception as e:
