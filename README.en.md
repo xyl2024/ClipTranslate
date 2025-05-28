@@ -23,7 +23,7 @@ ClipTranslate is a convenient Windows desktop translation tool that allows users
 
 3️⃣ Use Alibaba Cloud's Qianwen Translation Model API for translation
 
-4️⃣ Use a general chat large model API for translation
+4️⃣ Use a general chat large model API for translation (Not yet perfected, currently only tested with the free Qwen/Qwen3-8B model from Silicon Flow)
 
 5️⃣ Display both original text and translation in a separate window
 
