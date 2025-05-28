@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="350px" height="350px" src="assets/app_icon.png" />
+  <img width="200px" height="200px" src="assets/app_icon.png" />
 </p>
 
 <p align="center">ClipTranslate, a clipboard translation tool based on LLM</p>
