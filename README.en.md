@@ -1,4 +1,11 @@
-# ✨ **ClipTranslate - Clipboard Translation Tool** ✨
+<p align="center">
+  <img width="350px" height="350px" src="assets/app_icon.png" />
+</p>
+
+<p align="center">ClipTranslate, a clipboard translation tool based on LLM</p>
+
+<p align="center">English | <a href="README.md">中文</a></p>
+
 
 ## 🚀 **Project Overview**
 
@@ -108,3 +115,13 @@ Logs are located at `HOME/.cliptranslate_logs`
 ❗ This translation service relies on large models and may incur API usage fees
 
 ❗ The global hotkey functionality is only available on Windows
+
+## 🎨 **Resources**
+
+1️⃣ **PySide6 Tutorial**
+This project is built with PySide6. Learning resources:
+https://www.pythonguis.com/tutorials/pyside6-creating-your-first-window/
+
+2️⃣ **Icon Resources**
+The icons in this project come from Alibaba's Icon Library:
+https://www.iconfont.cn/

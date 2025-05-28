@@ -1,4 +1,10 @@
-# ✨ **ClipTranslate - 剪贴板翻译工具** ✨
+<p align="center">
+  <img width="350px" height="350px" src="assets/app_icon.png" />
+</p>
+
+<p align="center">ClipTranslate 一款基于大模型的剪贴板翻译工具</p>
+
+<p align="center"><a href="README.en.md">English</a> | 中文</p>
 
 ## 🚀 **项目概述**
 
@@ -108,3 +114,13 @@ $ uv run src/main.py
 ❗ 该翻译服务依赖于大模型，会产生API调用费用
 
 ❗ 全局快捷键功能仅在 Windows 平台上可用
+
+## 🎨 **资源**
+
+1️⃣ **PySide6教程**
+本项目基于PySide6构建，学习资源：
+https://www.pythonguis.com/tutorials/pyside6-creating-your-first-window/
+
+2️⃣ **图标资源**
+本项目icon来自阿里巴巴矢量图标库：
+https://www.iconfont.cn/
