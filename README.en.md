@@ -38,6 +38,14 @@ https://help.aliyun.com/zh/model-studio/get-api-key?spm=a2c4g.11186623.0.0.21076
 
 ## 📥 **Installation Steps**
 
+### Download
+
+1️⃣ Download the latest zip file from the Release page https://github.com/xyl2024/ClipTranslate/releases
+
+2️⃣ Double-click to run ClipTranslate.exe
+
+### Run with Python 
+
 > This project is managed using `uv`. You can refer to the [official manual](https://docs.astral.sh/uv/) to learn how to install and use `uv`.
 
 1️⃣ Clone or download this repository
