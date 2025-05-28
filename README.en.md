@@ -11,48 +11,30 @@
 
 ClipTranslate is a convenient Windows desktop translation tool that allows users to quickly translate the text content in their clipboard into Chinese or English using global hotkeys. The original text and its translation are displayed in a separate window.
 
-ℹ️ **Development Notes**
-
 > This project is developed and tested using Claude.
 
 ## 🔧 **Key Features**
 
-1️⃣ Trigger translation via global hotkeys
-
-2️⃣ Automatically retrieve clipboard text content
-
-3️⃣ Use Alibaba Cloud's Qianwen Translation Model API for translation
-
-4️⃣ Use a general chat large model API for translation (Not yet perfected, currently only tested with the free Qwen/Qwen3-8B model from Silicon Flow)
-
-5️⃣ Display both original text and translation in a separate window
-
-📌 **Related Links**
-
-💰 Qianwen Model Pricing:  
-https://help.aliyun.com/zh/model-studio/machine-translation
-
-🔑 Get API Key:  
-https://help.aliyun.com/zh/model-studio/get-api-key?spm=a2c4g.11186623.0.0.210766518NP6kD
-
+- Trigger translation via global hotkeys
+- Automatically retrieve clipboard text content
+- Use Alibaba Cloud's Qianwen Translation Model API for translation
+- Use a general chat large model API for translation (Not yet perfected, currently only tested with the free Qwen/Qwen3-8B model from Silicon Flow)
+- Display both original text and translation in a separate window
 
 ## 📥 **Installation Steps**
 
-### Download
+### Download the executable file
 
-1️⃣ Download the latest zip file from the Release page https://github.com/xyl2024/ClipTranslate/releases
-
-2️⃣ Double-click to run ClipTranslate.exe
+- Download the latest zip file from the Release page https://github.com/xyl2024/ClipTranslate/releases
+- Double-click to run ClipTranslate.exe
 
 ### Run with Python 
 
 > This project is managed using `uv`. You can refer to the [official manual](https://docs.astral.sh/uv/) to learn how to install and use `uv`.
 
-1️⃣ Clone or download this repository
-
-2️⃣ Install dependencies
-
-3️⃣ Run the application
+1. Clone or download this repository
+2. Install dependencies
+3. Run the application
 
 ```bash
 $ git clone https://github.com/xyl2024/ClipTranslate.git
@@ -63,31 +45,22 @@ $ uv run src/main.py
 
 ## ⚙️ **First-time Setup**
 
-1️⃣ After running the application, find the ClipTranslate icon in the system tray
-
-2️⃣ Right-click the icon and select "Settings"
-
-3️⃣ Enter your Alibaba Cloud API key/Chat model API key
-
-4️⃣ Customize the translation hotkeys
-
-5️⃣ Click "Save" to complete the setup
+1. After running the application, find the ClipTranslate icon in the system tray
+2. Right-click the icon and select "Settings"
+3. Enter your Alibaba Cloud API key/Chat model API key
+4. Customize the translation hotkeys
+5. Click "Save" to complete the setup
 
 ## 💡 **How to Use**
 
-1️⃣ Copy the text you want to translate (Ctrl+C)
-
-2️⃣ Press the configured hotkey:  
+1. Copy the text you want to translate (Ctrl+C)
+2. Press the configured hotkey:  
    - F2 to translate to Chinese  
    - F4 to translate to English
-
-3️⃣ The translation window will automatically display, showing both the original and translated text
-
-4️⃣ Click the "Copy Translation" button to copy the translation
-
-5️⃣ Press the ESC key or click the close button to hide the window
-
-6️⃣ Double-click the system tray icon to show/hide the translation window
+3. The translation window will automatically display, showing both the original and translated text
+4. Click the "Copy Translation" button to copy the translation
+5. Press the ESC key or click the close button to hide the window
+6. Double-click the system tray icon to show/hide the translation window
 
 🎥 Example:
 
@@ -126,10 +99,12 @@ Logs are located at `HOME/.cliptranslate_logs`
 
 ## 🎨 **Resources**
 
-1️⃣ **PySide6 Tutorial**
-This project is built with PySide6. Learning resources:
-https://www.pythonguis.com/tutorials/pyside6-creating-your-first-window/
+- **PySide6 Tutorial**
+This project is built with PySide6. Reference [Learning resources](https://www.pythonguis.com/tutorials/pyside6-creating-your-first-window/).
 
-2️⃣ **Icon Resources**
-The icons in this project come from Alibaba's Icon Library:
-https://www.iconfont.cn/
+- **Icon Resources**
+The icons in this project come from [Alibaba's Icon Library](https://www.iconfont.cn/).
+
+- **LLM**
+  - [Qwen-MT](https://help.aliyun.com/zh/model-studio/machine-translation)
+  - [siliconflow-Qwen/Qwen3-8B](https://cloud.siliconflow.cn/models?target=Qwen/Qwen3-8B)
