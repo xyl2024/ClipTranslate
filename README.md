@@ -1,15 +1,15 @@
-✨ **ClipTranslate - 剪贴板翻译工具** ✨
+# ✨ **ClipTranslate - 剪贴板翻译工具** ✨
 
-🚀 **项目概述**
+## 🚀 **项目概述**
 
 ClipTranslate 是一款 Windows 桌面便捷翻译工具，允许用户通过全局快捷键将剪贴板中的文本内容快速翻译成中文或英文，并在独立窗口中显示原文和译文。
 
 ℹ️ **开发说明**
+
 > 本项目通过 Claude 开发与测试。
 
----
+## 🔧 **主要功能**
 
-### 🔧 **主要功能**
 1️⃣ 通过全局快捷键触发翻译
 
 2️⃣ 自动获取剪贴板文本内容
@@ -28,9 +28,8 @@ https://help.aliyun.com/zh/model-studio/machine-translation
 🔑 获取API Key：
 https://help.aliyun.com/zh/model-studio/get-api-key?spm=a2c4g.11186623.0.0.210766518NP6kD
 
----
 
-### 📥 **使用步骤**
+## 📥 **使用步骤**
 
 > 本项目通过 uv 进行管理，你可以查看[官方使用手册](https://docs.astral.sh/uv/)学习 uv 的安装与使用。
 
@@ -47,9 +46,8 @@ $ uv sync
 $ uv run src/main.py
 ```
 
----
+## ⚙️ **首次使用配置**
 
-### ⚙️ **首次使用配置**
 1️⃣ 运行应用程序后，在系统托盘区找到 ClipTranslate 图标
 
 2️⃣ 右键点击图标，选择"设置"
@@ -60,9 +58,8 @@ $ uv run src/main.py
 
 5️⃣ 点击"保存"完成配置
 
----
+## 💡 **使用方法**
 
-### 💡 **使用方法**
 1️⃣ 复制需要翻译的文本（Ctrl+C）
 
 2️⃣ 按下配置的快捷键：
@@ -81,9 +78,8 @@ $ uv run src/main.py
 
 ![](assets/usage.gif)
 
----
 
-### 📂 **配置文件**
+## 📂 **配置文件**
 
 配置文件位于 `HOME/.cliptranslate/config.json`：
 
@@ -103,15 +99,11 @@ $ uv run src/main.py
 }
 ```
 
----
-
-### 📝 **日志文件**
+## 📝 **日志文件**
 
 日志位于 `HOME/.cliptranslate_logs`
 
----
-
-### ⚠️ **注意事项**
+## ⚠️ **注意事项**
 
 ❗ 该翻译服务依赖于大模型，会产生API调用费用
 
