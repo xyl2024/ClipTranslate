@@ -82,7 +82,7 @@ $ uv run src/main.py
 
 🎥 示例：
 
-![](assets/usage.gif)
+![](assets/usage.webp)
 
 
 ## 📂 **配置文件**
