@@ -259,7 +259,7 @@ class App:
     def setup_hotkeys(self):
         config = self.config_manager.get_config()
         self.hotkey_to_chinese = config.get("hotkey_to_chinese", "f2")
-        self.hotkey_to_english = config.get("hotkey_to_english", "f10")
+        self.hotkey_to_english = config.get("hotkey_to_english", "f4")
 
         self.hotkey_timer = QTimer()
         self.hotkey_timer.timeout.connect(self.check_hotkeys)

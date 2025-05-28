@@ -19,32 +19,6 @@ from utils import get_app_icon
 logger = logging.getLogger(__name__)
 
 
-class HotkeyEdit(QLineEdit):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setReadOnly(True)
-        self.setPlaceholderText("点击此处按下快捷键")
-
-    def keyPressEvent(self, event):
-        # 简单处理，实际应用中可能需要更复杂的逻辑
-        # todo
-        key_text = event.text().lower()
-        if key_text:
-            if event.modifiers() & Qt.ControlModifier:
-                key_text = "ctrl+" + key_text
-            if event.modifiers() & Qt.AltModifier:
-                key_text = "alt+" + key_text
-            if event.modifiers() & Qt.ShiftModifier:
-                key_text = "shift+" + key_text
-
-            key = event.key()
-            if Qt.Key_F1 <= key <= Qt.Key_F12:
-                key_text = f"f{key - Qt.Key_F1 + 1}"
-
-            self.setText(key_text)
-            event.accept()
-
-
 class UiSettings(QDialog):
     settings_saved = Signal(dict)
 
@@ -73,11 +47,17 @@ class UiSettings(QDialog):
         hotkey_group = QGroupBox("快捷键设置")
         hotkey_form = QFormLayout(hotkey_group)
 
-        self.chinese_hotkey_edit = HotkeyEdit()
+        self.chinese_hotkey_edit = QLineEdit()
         hotkey_form.addRow("翻译为中文:", self.chinese_hotkey_edit)
 
-        self.english_hotkey_edit = HotkeyEdit()
+        self.english_hotkey_edit = QLineEdit()
         hotkey_form.addRow("翻译为英文:", self.english_hotkey_edit)
+        
+        self.explanation_label = QLabel("详细格式参考 python keyboard 库格式要求")
+        hotkey_form.addRow(self.explanation_label)
+
+        self.example_label = QLabel("示例: Ctrl+Shift+F2 或 alt+t 或 F2 或 space+2 等")
+        hotkey_form.addRow(self.example_label)
 
         hotkey_layout.addWidget(hotkey_group)
         hotkey_layout.addStretch()
