@@ -225,21 +225,22 @@ class UiTranslation(QMainWindow):
             prompt = usage.get("prompt_tokens", 0)
             completion = usage.get("completion_tokens", 0)
             total = usage.get("total_tokens", 0)
-
             model_name = usage.get("model", "")
-
-            if "turbo" in model_name.lower():
-                prompt_cost = 0.001 * prompt / 1000  # 0.001元每千Token
-                completion_cost = 0.003 * completion / 1000  # 0.003元每千Token
+            if total == 0:
+                self.token_label.setText(f"😁您使用的是免费模型：{model_name}")
             else:
-                prompt_cost = 0.015 * prompt / 1000  # 0.015元每千Token
-                completion_cost = 0.045 * completion / 1000  # 0.045元每千Token
+                if "turbo" in model_name.lower():
+                    prompt_cost = 0.001 * prompt / 1000  # 0.001元每千Token
+                    completion_cost = 0.003 * completion / 1000  # 0.003元每千Token
+                else:
+                    prompt_cost = 0.015 * prompt / 1000  # 0.015元每千Token
+                    completion_cost = 0.045 * completion / 1000  # 0.045元每千Token
 
-            total_cost = prompt_cost + completion_cost
-            cost_str = f"{prompt_cost:.4f}+{completion_cost:.4f}={total_cost:.4f}元"
-            self.token_label.setText(
-                f"😭Token: {prompt}+{completion}={total} 💰Cost: {cost_str}"
-            )
+                total_cost = prompt_cost + completion_cost
+                cost_str = f"{prompt_cost:.4f}+{completion_cost:.4f}={total_cost:.4f}元"
+                self.token_label.setText(
+                    f"😭Token: {prompt}+{completion}={total} 💰花费: {cost_str} 🤖模型：{model_name}"
+                )
 
         self.progress_bar.hide()
         self.show()
