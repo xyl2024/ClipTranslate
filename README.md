@@ -80,5 +80,3 @@ $ uv run src/main.py
 
 - 该翻译服务依赖于大模型，会产生API调用费用
 - 全局快捷键功能仅在 Windows 平台上可用
-
-
