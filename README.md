@@ -1,5 +1,7 @@
 <p align="center">
   <img width="300px" height="100px" src="assets/logo.svg" />
+
+  <img width="150px" height="150px" src="assets/app_icon.png" />
 </p>
 
 <p align="center">ClipTranslate 一款基于大模型的剪贴板翻译工具</p>
