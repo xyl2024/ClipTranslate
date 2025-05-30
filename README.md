@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="200px" height="200px" src="assets/app_icon.png" />
+  <img width="300px" height="100px" src="assets/logo.svg" />
 </p>
 
 <p align="center">ClipTranslate 一款基于大模型的剪贴板翻译工具</p>
@@ -103,6 +103,7 @@ $ uv run src/main.py
 
 - **图标资源**
 本项目icon来自[阿里巴巴矢量图标库](https://www.iconfont.cn/)。
+本项目logo来自[text-to-svg](https://github.com/JiuRanYa/text-to-svg)
 
 - **大模型**
   - [Qwen-MT模型](https://help.aliyun.com/zh/model-studio/machine-translation)

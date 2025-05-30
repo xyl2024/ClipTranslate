@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="200px" height="200px" src="assets/app_icon.png" />
+  <img width="300px" height="100px" src="assets/logo.svg" />
 </p>
 
 <p align="center">ClipTranslate, a clipboard translation tool based on LLM</p>
@@ -104,6 +104,7 @@ This project is built with PySide6. Reference [Learning resources](https://www.p
 
 - **Icon Resources**
 The icons in this project come from [Alibaba's Icon Library](https://www.iconfont.cn/).
+The logo for this project comes from [text-to-svg](https://github.com/JiuRanYa/text-to-svg). 
 
 - **LLM**
   - [Qwen-MT](https://help.aliyun.com/zh/model-studio/machine-translation)
