@@ -17,8 +17,13 @@ logger = logging.getLogger(__name__)
 
 TEXT_AREA_CSS = """
     QTextEdit {
-        background-color: #f8f8f8;
-        border: 1px solid #e0e0e0;
+        background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                    stop:0 #ffffff, /* 白色 */
+                                    stop:0.2 #d5f4e6, /* 淡绿色 */
+                                    stop:0.4 #bee3f8, /* 淡蓝色 */
+                                    stop:0.6 #f0e6f6, /* 淡紫色 */
+                                    stop:0.8 #ffe9c7, /* 淡橙色 */
+                                    stop:1 #ffffff); /* 白色 */
         border-radius: 8px;
         padding: 10px;
     }
@@ -124,7 +129,15 @@ PROGRESS_BAR_CSS = """
 
 UITRANSLATION_CSS = """
     QMainWindow {
-        background-color: #D2DCDF;
+        /* 从左到右的明亮彩虹渐变 */
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                    stop:0 #ffffff, /* 白色 */
+                                    stop:0.2 #d5f4e6, /* 淡绿色 */
+                                    stop:0.4 #bee3f8, /* 淡蓝色 */
+                                    stop:0.6 #f0e6f6, /* 淡紫色 */
+                                    stop:0.8 #ffe9c7, /* 淡橙色 */
+                                    stop:1 #ffffff); /* 白色 */
+        border: 1px solid #dddddd; /* 可选：添加轻微边框 */
     }
 """
 
@@ -133,7 +146,7 @@ class UiTranslation(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setGeometry(300, 300, 500, 300)
+        self.setGeometry(300, 300, 500, 500)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
 
         self._drag_position = None
@@ -211,7 +224,8 @@ class UiTranslation(QMainWindow):
 
     @Slot(str)
     def set_translation(self, text, translated, usage=None):
-        delimiter = "——-——" * 9
+        # delimiter = "——-——" * 9
+        delimiter = ""
         self.current_translation = translated
         self.text_area.setText(f"{text}\n{delimiter}\n{translated}")
 
@@ -278,7 +292,8 @@ class UiTranslation(QMainWindow):
     @Slot(str)
     def update_translation_progress(self, partial_translation):
         self.current_translation = partial_translation
-        delimiter = "——-——" * 9
+        # delimiter = "——-——" * 9
+        delimiter = ""
         self.text_area.setText(
             f"{self.current_original_text}\n{delimiter}\n{partial_translation}"
         )
