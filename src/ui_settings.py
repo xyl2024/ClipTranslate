@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QComboBox,
     QLabel,
+    QSlider,
 )
 from PySide6.QtCore import Qt, Signal
 
@@ -66,6 +67,28 @@ class UiSettings(QDialog):
         hotkey_layout.addWidget(hotkey_group)
         hotkey_layout.addStretch()
 
+        # 窗口设置标签页
+        window_tab = QWidget()
+        window_layout = QVBoxLayout(window_tab)
+
+        window_group = QGroupBox("窗口设置")
+        window_form = QFormLayout(window_group)
+
+        self.opacity_slider = QSlider(Qt.Horizontal)
+        self.opacity_slider.setRange(30, 100)
+        self.opacity_slider.setValue(95)
+        self.opacity_slider.valueChanged.connect(self.update_opacity_label)
+        self.opacity_label = QLabel("95%")
+        self.opacity_label.setFixedWidth(40)
+
+        opacity_layout = QHBoxLayout()
+        opacity_layout.addWidget(self.opacity_slider)
+        opacity_layout.addWidget(self.opacity_label)
+        window_form.addRow("窗口透明度:", opacity_layout)
+
+        window_layout.addWidget(window_group)
+        window_layout.addStretch()
+
         # API设置标签页
         api_tab = QWidget()
         api_layout = QVBoxLayout(api_tab)
@@ -93,6 +116,7 @@ class UiSettings(QDialog):
         api_layout.addStretch()
 
         tab_widget.addTab(hotkey_tab, "快捷键")
+        tab_widget.addTab(window_tab, "窗口")
         tab_widget.addTab(api_tab, "API设置")
 
         layout.addWidget(tab_widget)
@@ -116,16 +140,25 @@ class UiSettings(QDialog):
         self.english_hotkey_edit.setText(self.config.get("hotkey_to_english", "f4"))
         self.emoji_hotkey_edit.setText(self.config.get("hotkey_to_emoji", constants.DEFAULT_HOTKEY_TO_EMOJI))
 
+        opacity = int(self.config.get("window_opacity", 95))
+        self.opacity_slider.setValue(opacity)
+        self.opacity_label.setText(f"{opacity}%")
+
         # 加载Chat配置
         self.chat_api_key_edit.setText(self.config.get("chat_api_key", ""))
         self.chat_api_url_edit.setText(self.config.get("chat_api_url", ""))
         self.chat_api_model_edit.setText(self.config.get("chat_api_model", ""))
+
+    def update_opacity_label(self):
+        value = self.opacity_slider.value()
+        self.opacity_label.setText(f"{value}%")
 
     def save_settings(self):
         new_config = {
             "hotkey_to_chinese": self.chinese_hotkey_edit.text(),
             "hotkey_to_english": self.english_hotkey_edit.text(),
             "hotkey_to_emoji": self.emoji_hotkey_edit.text(),
+            "window_opacity": self.opacity_slider.value() / 100.0,
             # Chat配置
             "chat_api_key": self.chat_api_key_edit.text(),
             "chat_api_url": self.chat_api_url_edit.text(),

@@ -18,6 +18,8 @@ class ConfigManager:
         "chat_api_key": "",
         "chat_api_url": DEFAULT_CHAT_BASE_URL,
         "chat_api_model": DEFAULT_CHAT_MODEL,
+        # 界面配置
+        "window_opacity": 0.95,
     }
 
     def __init__(self):

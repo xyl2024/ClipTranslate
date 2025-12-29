@@ -39,7 +39,7 @@ def setup_logger() -> logging.Logger:
     log_file = log_dir / f"translator_{datetime.now().strftime('%Y%m%d')}.log"
 
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     file_handler = logging.handlers.RotatingFileHandler(
         log_file,
@@ -50,7 +50,7 @@ def setup_logger() -> logging.Logger:
     file_handler.setLevel(logging.INFO)
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
+    console_handler.setLevel(logging.INFO)
 
     formatter = logging.Formatter(
         "[%(asctime)s][%(levelname)s][%(threadName)s][%(filename)s:%(lineno)d]: %(message)s"
@@ -82,7 +82,7 @@ class App:
         self.app.setWindowIcon(app_icon)
 
         self.config_manager = ConfigManager()
-        self.ui_translation = UiTranslation()
+        self.ui_translation = UiTranslation(self.config_manager)
 
         try:
             config = self.config_manager.get_config()
@@ -487,6 +487,10 @@ class App:
                         QSystemTrayIcon.Information,
                         constants.TRAY_MESSAGE_WARNING_DURATION,
                     )
+
+            if old_config.get("window_opacity") != new_config.get("window_opacity"):
+                opacity = new_config.get("window_opacity", 0.95)
+                self.ui_translation.set_opacity(opacity)
 
             logger.info("设置已成功应用")
         except Exception as e:

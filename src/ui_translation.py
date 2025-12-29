@@ -28,7 +28,6 @@ TEXT_AREA_CSS = """
         padding: 10px;
     }
     
-    /* 滚动条整体样式 */
     QScrollBar:vertical {
         border: none;
         background: #f0f0f0;
@@ -37,38 +36,32 @@ TEXT_AREA_CSS = """
         border-radius: 5px;
     }
     
-    /* 滚动条滑块 */
     QScrollBar::handle:vertical {
         background: #c0c0c0;
         min-height: 30px;
         border-radius: 5px;
     }
     
-    /* 鼠标悬停在滑块上的样式 */
     QScrollBar::handle:vertical:hover {
         background: #a0a0a0;
     }
     
-    /* 滑块按下的样式 */
     QScrollBar::handle:vertical:pressed {
         background: #808080;
     }
     
-    /* 上箭头区域 */
     QScrollBar::sub-line:vertical {
         border: none;
         background: none;
         height: 0px;
     }
     
-    /* 下箭头区域 */
     QScrollBar::add-line:vertical {
         border: none;
         background: none;
         height: 0px;
     }
     
-    /* 滚动条上方和下方区域 */
     QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
         background: none;
     }
@@ -129,29 +122,32 @@ PROGRESS_BAR_CSS = """
 
 UITRANSLATION_CSS = """
     QMainWindow {
-        /* 从左到右的明亮彩虹渐变 */
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                                    stop:0 #ffffff, /* 白色 */
-                                    stop:0.2 #d5f4e6, /* 淡绿色 */
-                                    stop:0.4 #bee3f8, /* 淡蓝色 */
-                                    stop:0.6 #f0e6f6, /* 淡紫色 */
-                                    stop:0.8 #ffe9c7, /* 淡橙色 */
-                                    stop:1 #ffffff); /* 白色 */
-        border: 1px solid #dddddd; /* 可选：添加轻微边框 */
+                                    stop:0 #ffffff,
+                                    stop:0.2 #d5f4e6,
+                                    stop:0.4 #bee3f8,
+                                    stop:0.6 #f0e6f6,
+                                    stop:0.8 #ffe9c7,
+                                    stop:1 #ffffff);
+        border: 1px solid #dddddd;
     }
 """
 
 
 class UiTranslation(QMainWindow):
-    def __init__(self):
+    def __init__(self, config_manager=None):
         super().__init__()
 
-        self.setGeometry(300, 300, 500, 500)
+        self.setGeometry(300, 300, 500, 350)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
 
         self._drag_position = None
         self.current_original_text = ""
         self.current_translation = ""
+
+        if config_manager:
+            opacity = config_manager.get("window_opacity", 0.95)
+            self.setWindowOpacity(opacity)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -188,7 +184,7 @@ class UiTranslation(QMainWindow):
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setTextVisible(False)
-        self.progress_bar.setRange(0, 0)  # 不确定模式
+        self.progress_bar.setRange(0, 0)
         self.progress_bar.setStyleSheet(PROGRESS_BAR_CSS)
         self.progress_bar.hide()
         layout.addWidget(self.progress_bar)
@@ -200,6 +196,9 @@ class UiTranslation(QMainWindow):
 
         self.setStyleSheet(UITRANSLATION_CSS)
         logger.info("翻译窗口初始化完成")
+
+    def set_opacity(self, opacity):
+        self.setWindowOpacity(opacity)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -224,17 +223,14 @@ class UiTranslation(QMainWindow):
 
     @Slot(str)
     def set_translation(self, text, translated, usage=None):
-        # delimiter = "——-——" * 9
         delimiter = ""
         self.current_translation = translated
         self.text_area.setText(f"{text}\n{delimiter}\n{translated}")
 
-        # 滚动到底部
         self.text_area.verticalScrollBar().setValue(
             self.text_area.verticalScrollBar().maximum()
         )
 
-        # 显示模型和接口信息
         if usage:
             model_name = usage.get("model", "")
             self.token_label.setText(f"🤖模型: {model_name}")
@@ -265,7 +261,6 @@ class UiTranslation(QMainWindow):
             self.copy_button.setText("已复制!")
             self.copy_button.setStyleSheet(COPYED_BUTTON_CSS)
 
-            # 使用QTimer延时恢复按钮文字
             QTimer.singleShot(1500, lambda: self.reset_copy_button(original_text))
 
     def reset_copy_button(self, text):
@@ -275,13 +270,11 @@ class UiTranslation(QMainWindow):
     @Slot(str)
     def update_translation_progress(self, partial_translation):
         self.current_translation = partial_translation
-        # delimiter = "——-——" * 9
         delimiter = ""
         self.text_area.setText(
             f"{self.current_original_text}\n{delimiter}\n{partial_translation}"
         )
 
-        # 滚动到底部
         self.text_area.verticalScrollBar().setValue(
             self.text_area.verticalScrollBar().maximum()
         )
