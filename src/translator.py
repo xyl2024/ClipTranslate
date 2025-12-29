@@ -1,5 +1,14 @@
+"""翻译器模块
+
+提供抽象翻译器基类和具体实现。
+"""
+
+import json
 import logging
 from openai import OpenAI
+from typing import Optional, Callable, Dict, Any
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -20,51 +29,151 @@ Translation requirements:
 4. Directly output the translation result without adding any explanations or comments, and do not include the {SEPARATOR} tag.
 """
 
+# 支持的目标语言
+SUPPORTED_TARGET_LANGUAGES = ["Chinese", "English"]
+
 
 class Translator:
-    def translate(self, text, target_lang="Chinese"):
+    """翻译器抽象基类。
+
+    所有具体翻译器实现应继承此类并实现 `translate_stream` 方法。
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        """初始化翻译器。
+
+        Args:
+            config: 配置字典
+        """
+        self.config = config or {}
+        self.last_usage: Dict[str, Any] = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "model": "",
+        }
+
+    def translate(self, text: str, target_lang: str = "Chinese") -> str:
+        """翻译文本（非流式）。
+
+        Args:
+            text: 待翻译的文本
+            target_lang: 目标语言 ("Chinese" 或 "English")
+
+        Returns:
+            翻译后的文本
+        """
         raise NotImplementedError("Translator派生类未实现translate()方法")
 
-    def translate_stream(self, text, target_lang="Chinese", callback=None):
+    def translate_stream(
+        self,
+        text: str,
+        target_lang: str = "Chinese",
+        callback: Optional[Callable[[str], None]] = None,
+    ) -> str:
+        """流式翻译文本。
+
+        Args:
+            text: 待翻译的文本
+            target_lang: 目标语言 ("Chinese" 或 "English")
+            callback: 接收进度更新的回调函数
+
+        Returns:
+            翻译后的完整文本
+        """
         raise NotImplementedError("Translator派生类未实现translate_stream()方法")
 
+    def _validate_config(self, api_key: str, api_url: str, api_model: str) -> None:
+        """验证翻译器配置。
 
-class QwenTranslator(Translator):
-    def __init__(self, config=None):
-        self.config = config or {}
-        self.api_key = self.config.get("qwen_api_key", "")
-        self.api_url = self.config.get("qwen_api_url", "")
-        self.api_model = self.config.get("qwen_api_model", "")
+        Args:
+            api_key: API 密钥
+            api_url: API 地址
+            api_model: API 模型
+
+        Raises:
+            ValueError: 当任何必要配置缺失时
+        """
+        if not api_key:
+            raise ValueError("未配置API密钥，请在设置中配置")
+
+        if not api_url:
+            raise ValueError("未配置API URL，请在设置中配置")
+
+        if not api_model:
+            raise ValueError("未配置API模型，请在设置中配置")
+
+    def _validate_target_lang(self, target_lang: str) -> str:
+        """验证并规范化目标语言。
+
+        Args:
+            target_lang: 目标语言
+
+        Returns:
+            规范化后的目标语言
+        """
+        if target_lang not in SUPPORTED_TARGET_LANGUAGES:
+            target_lang = "Chinese"
+        return target_lang
+
+    def reset_last_usage(self) -> None:
+        """重置最后的使用统计。"""
         self.last_usage = {
             "prompt_tokens": 0,
             "completion_tokens": 0,
             "total_tokens": 0,
-            "model": self.api_model,
+            "model": getattr(self, "api_model", ""),
         }
+
+    def get_last_usage(self) -> Dict[str, Any]:
+        """获取最后的使用统计。
+
+        Returns:
+            使用统计字典
+        """
+        return self.last_usage
+
+
+class QwenTranslator(Translator):
+    """阿里云千问翻译器。
+
+    使用阿里云 DashScope API 进行翻译。
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        """初始化千问翻译器。
+
+        Args:
+            config: 配置字典，应包含 qwen_api_key, qwen_api_url, qwen_api_model
+        """
+        super().__init__(config)
+        self.api_key = self.config.get("qwen_api_key", "")
+        self.api_url = self.config.get("qwen_api_url", "")
+        self.api_model = self.config.get("qwen_api_model", "")
+        self.last_usage["model"] = self.api_model
+
         if not self.api_key:
             logger.error("未提供API密钥，翻译功能将不可用")
 
         logger.info("千问翻译器初始化完成")
 
-    def update_config(self, config):
+    def update_config(self, config: Dict[str, Any]) -> None:
+        """更新翻译器配置。
+
+        Args:
+            config: 新的配置字典
+        """
         self.config = config
         self.api_key = config.get("qwen_api_key", self.api_key)
         self.api_url = config.get("qwen_api_url", self.api_url)
         self.api_model = config.get("qwen_api_model", self.api_model)
+        self.last_usage["model"] = self.api_model
         logger.info("翻译器配置已更新")
 
-    def translate(self, text, target_lang="Chinese"):
-        if target_lang not in ["Chinese", "English"]:
-            target_lang = "Chinese"
-
-        if not self.api_key:
-            raise ValueError("未配置API密钥，请在设置中配置")
-
-        if not self.api_url:
-            raise ValueError("未配置API URL，请在设置中配置")
-
-        if not self.api_model:
-            raise ValueError("未配置API模型，请在设置中配置")
+    def translate(self, text: str, target_lang: str = "Chinese") -> str:
+        """翻译文本。"""
+        target_lang = self._validate_target_lang(target_lang)
+        self._validate_config(self.api_key, self.api_url, self.api_model)
 
         headers = {
             "Content-Type": "application/json",
@@ -89,18 +198,15 @@ class QwenTranslator(Translator):
         else:
             raise Exception(f"API错误: {response.status_code} - {response.text}")
 
-    def translate_stream(self, text, target_lang="Chinese", callback=None):
-        if target_lang not in ["Chinese", "English"]:
-            target_lang = "Chinese"
-
-        if not self.api_key:
-            raise ValueError("未配置API密钥，请在设置中配置")
-
-        if not self.api_url:
-            raise ValueError("未配置API URL，请在设置中配置")
-
-        if not self.api_model:
-            raise ValueError("未配置API模型，请在设置中配置")
+    def translate_stream(
+        self,
+        text: str,
+        target_lang: str = "Chinese",
+        callback: Optional[Callable[[str], None]] = None,
+    ) -> str:
+        """流式翻译文本。"""
+        target_lang = self._validate_target_lang(target_lang)
+        self._validate_config(self.api_key, self.api_url, self.api_model)
 
         headers = {
             "Content-Type": "application/json",
@@ -127,6 +233,8 @@ class QwenTranslator(Translator):
                 raise Exception(f"API错误: {response.status_code} - {response.text}")
 
             self.reset_last_usage()
+
+            content = ""
 
             for line in response.iter_lines():
                 if line:
@@ -165,31 +273,25 @@ class QwenTranslator(Translator):
             logger.error(f"流式翻译过程中发生错误: {e}")
             raise
 
-    def reset_last_usage(self):
-        self.last_usage = {
-            "prompt_tokens": 0,
-            "completion_tokens": 0,
-            "total_tokens": 0,
-            "model": self.api_model,
-        }
-
-    def get_last_usage(self):
-        return self.last_usage
-
 
 class ChatTranslator(Translator):
-    def __init__(self, config=None):
-        self.config = config or {}
+    """通用聊天翻译器。
+
+    使用 OpenAI 兼容的 API 进行翻译。
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        """初始化聊天翻译器。
+
+        Args:
+            config: 配置字典，应包含 chat_api_key, chat_api_url, chat_api_model
+        """
+        super().__init__(config)
         self.api_key = self.config.get("chat_api_key", "")
         self.api_url = self.config.get("chat_api_url", "")
         self.api_model = self.config.get("chat_api_model", "")
-        self.last_usage = {
-            "prompt_tokens": 0,
-            "completion_tokens": 0,
-            "total_tokens": 0,
-            "model": self.api_model,
-        }
-        self.client = None
+        self.last_usage["model"] = self.api_model
+        self.client: Optional[OpenAI] = None
 
         self._init_client()
 
@@ -198,16 +300,24 @@ class ChatTranslator(Translator):
 
         logger.info("通用聊天翻译器初始化完成")
 
-    def _init_client(self):
-        """初始化 OpenAI 客户端"""
+    def _init_client(self) -> None:
+        """初始化 OpenAI 客户端。"""
         if self.api_key and self.api_url:
             self.client = OpenAI(
                 api_key=self.api_key,
                 base_url=self.api_url,
             )
 
-    def _build_translation_prompt(self, text, target_lang):
-        """构建翻译提示词"""
+    def _build_translation_prompt(self, text: str, target_lang: str) -> list:
+        """构建翻译提示词。
+
+        Args:
+            text: 待翻译的文本
+            target_lang: 目标语言
+
+        Returns:
+            消息列表
+        """
         if target_lang == "Chinese":
             system_prompt = SYSTEM_PROMPT_CH
         else:
@@ -218,18 +328,15 @@ class ChatTranslator(Translator):
             {"role": "user", "content": SEPARATOR + text + SEPARATOR},
         ]
 
-    def translate_stream(self, text, target_lang="Chinese", callback=None):
-        if target_lang not in ["Chinese", "English"]:
-            target_lang = "Chinese"
-
-        if not self.api_key:
-            raise ValueError("未配置API密钥，请在设置中配置")
-
-        if not self.api_url:
-            raise ValueError("未配置API URL，请在设置中配置")
-
-        if not self.api_model:
-            raise ValueError("未配置API模型，请在设置中配置")
+    def translate_stream(
+        self,
+        text: str,
+        target_lang: str = "Chinese",
+        callback: Optional[Callable[[str], None]] = None,
+    ) -> str:
+        """流式翻译文本。"""
+        target_lang = self._validate_target_lang(target_lang)
+        self._validate_config(self.api_key, self.api_url, self.api_model)
 
         if not self.client:
             self._init_client()
@@ -264,21 +371,16 @@ class ChatTranslator(Translator):
             logger.error(f"流式翻译过程中发生错误: {e}")
             raise
 
-    def update_config(self, config):
+    def update_config(self, config: Dict[str, Any]) -> None:
+        """更新翻译器配置。
+
+        Args:
+            config: 新的配置字典
+        """
         self.config = config
         self.api_key = config.get("chat_api_key", self.api_key)
         self.api_url = config.get("chat_api_url", self.api_url)
         self.api_model = config.get("chat_api_model", self.api_model)
+        self.last_usage["model"] = self.api_model
         self._init_client()
         logger.info("通用聊天翻译器配置已更新")
-
-    def reset_last_usage(self):
-        self.last_usage = {
-            "prompt_tokens": 0,
-            "completion_tokens": 0,
-            "total_tokens": 0,
-            "model": self.api_model,
-        }
-
-    def get_last_usage(self):
-        return self.last_usage

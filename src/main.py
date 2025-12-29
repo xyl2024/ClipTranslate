@@ -1,25 +1,38 @@
-import re
+"""ClipTranslate 主应用模块
+
+提供应用程序的入口点和主应用程序类。
+"""
+
 import sys
+import re
 import keyboard
 import pyperclip
 import logging
 import logging.handlers
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Slot, QTimer, Qt
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QMessageBox
 
 from ui_translation import UiTranslation
 from translator import QwenTranslator, ChatTranslator
+from translator import Translator
 from translator_thread import TranslatorThread
 from config_manager import ConfigManager
 from ui_settings import UiSettings
-from utils import get_app_icon
+from utils import get_app_icon, clean_string
+import constants
 
 
-def setup_logger():
-    log_dir = Path.home() / ".cliptranslate_logs"
+def setup_logger() -> logging.Logger:
+    """设置应用程序日志。
+
+    Returns:
+        配置好的日志记录器
+    """
+    log_dir = Path.home() / constants.LOG_DIR
     log_dir.mkdir(exist_ok=True)
 
     log_file = log_dir / f"translator_{datetime.now().strftime('%Y%m%d')}.log"
@@ -28,7 +41,10 @@ def setup_logger():
     logger.setLevel(logging.DEBUG)
 
     file_handler = logging.handlers.RotatingFileHandler(
-        log_file, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8"
+        log_file,
+        maxBytes=constants.LOG_FILE_MAX_BYTES,
+        backupCount=constants.LOG_FILE_BACKUP_COUNT,
+        encoding="utf-8",
     )
     file_handler.setLevel(logging.INFO)
 
@@ -50,25 +66,14 @@ def setup_logger():
 logger = setup_logger()
 
 
-def clean_string(text):
-    # 将连续的空格替换为单个空格
-    text = re.sub(r" +", " ", text)
-
-    # 分割成行并处理每一行
-    lines = text.split("\n")
-
-    # 清理每行的首尾空格，并过滤掉空行
-    cleaned_lines = []
-    for line in lines:
-        stripped_line = line.strip()
-        if stripped_line:  # 只保留非空行
-            cleaned_lines.append(stripped_line)
-
-    return "\n".join(cleaned_lines)
-
-
 class App:
+    """ClipTranslate 主应用程序类。
+
+    负责应用程序的初始化、系统托盘、热键监听和翻译流程协调。
+    """
+
     def __init__(self):
+        """初始化应用程序。"""
         logger.info("应用程序正在初始化...")
         self.app = QApplication.instance() or QApplication(sys.argv)
 
@@ -83,17 +88,18 @@ class App:
             translator_type = config.get("translator_type", "qwen")
 
             if translator_type == "chat":
-                self.translator = ChatTranslator(config)
+                self.translator: Translator = ChatTranslator(config)
                 logger.info("使用通用聊天模型翻译器")
             else:
-                self.translator = QwenTranslator(config)
+                self.translator: Translator = QwenTranslator(config)
                 logger.info("使用Qwen专用翻译器")
         except ValueError as e:
             logger.warning(f"初始化翻译器警告: {e}")
             logger.info("默认使用Qwen专用翻译器")
             self.translator = QwenTranslator({})
             QTimer.singleShot(
-                1000, lambda: self.show_settings_with_message("请设置API密钥")
+                constants.SETTINGS_POPUP_DELAY_MS,
+                lambda: self.show_settings_with_message("请设置API密钥"),
             )
 
         self.translator_thread = TranslatorThread(self.translator)
@@ -105,14 +111,19 @@ class App:
             self.ui_translation.update_translation_progress
         )
 
-        self.ui_settings = None
+        self.ui_settings: Optional[UiSettings] = None
 
         self.setup_hotkeys()
         self.setup_tray_icon()
 
         logger.info("应用程序的初始化已完成")
 
-    def translate_clipboard(self, target_lang="Chinese"):
+    def translate_clipboard(self, target_lang: str = "Chinese") -> None:
+        """翻译剪贴板内容。
+
+        Args:
+            target_lang: 目标语言 ("Chinese" 或 "English")
+        """
         try:
             logger.info(f"开始处理剪贴板翻译请求，目标语言：{target_lang}")
 
@@ -159,7 +170,17 @@ class App:
         except Exception as e:
             logger.exception(f"翻译剪贴板过程中发生异常: {str(e)}")
 
-    def show_simple_confirmation(self, title, message, detail):
+    def show_simple_confirmation(self, title: str, message: str, detail: str) -> bool:
+        """显示简单的确认对话框。
+
+        Args:
+            title: 对话框标题
+            message: 主要消息
+            detail: 详细信息
+
+        Returns:
+            用户是否点击了 Yes
+        """
         try:
             logger.info(f"显示确认对话框: {title}")
 
@@ -180,18 +201,35 @@ class App:
             logger.exception(f"显示确认对话框时发生异常: {str(e)}")
             return False
 
-    def detect_text_type_and_check_length(self, text):
-        chinese_threshold = self.config_manager.get("chinese_threshold", 300)
-        english_threshold = self.config_manager.get("english_threshold", 1000)
+    def detect_text_type_and_check_length(self, text: str) -> tuple[bool, str, bool]:
+        """检测文本类型并检查长度。
+
+        Args:
+            text: 待检测的文本
+
+        Returns:
+            (是否超过阈值, 提示消息, 是否为中文)
+        """
+        chinese_threshold = self.config_manager.get(
+            "chinese_threshold", constants.CHINESE_TEXT_THRESHOLD
+        )
+        english_threshold = self.config_manager.get(
+            "english_threshold", constants.ENGLISH_TEXT_THRESHOLD
+        )
 
         if not text:
             return False, "", False
         # 这里判断文本类型采用简单的方式：
         # 根据前30个字符的中文比例判断
-        sample_text = text[: min(30, len(text))]
-        chinese_char_count = len(re.findall(r"[\u4e00-\u9fff]", sample_text))
+        sample_text = text[: min(constants.CHINESE_DETECTION_SAMPLE_SIZE, len(text))]
+        chinese_char_count = len(
+            re.findall(constants.CHINESE_CHAR_PATTERN, sample_text)
+        )
         is_chinese_text = (
-            chinese_char_count / len(sample_text) > 0.5 if sample_text else False
+            chinese_char_count / len(sample_text)
+            > constants.CHINESE_DETECTION_RATIO_THRESHOLD
+            if sample_text
+            else False
         )
         threshold = chinese_threshold if is_chinese_text else english_threshold
         text_type = "中文" if is_chinese_text else "英文"
@@ -202,7 +240,8 @@ class App:
 
         return False, "", is_chinese_text
 
-    def setup_tray_icon(self):
+    def setup_tray_icon(self) -> None:
+        """设置系统托盘图标。"""
         self.tray_icon = QSystemTrayIcon(self.app)
         icon = get_app_icon("app_icon.png")
         self.tray_icon.setIcon(icon)
@@ -215,7 +254,7 @@ class App:
 
         translate_to_chinese = QAction("翻译为中文", self.app)
         translate_to_chinese.triggered.connect(
-            lambda: self.translate_clipboard("Chinese")
+            lambda: self.translate_clipboard(constants.DEFAULT_TARGET_LANGUAGE)
         )
         translate_menu.addAction(translate_to_chinese)
 
@@ -245,30 +284,39 @@ class App:
         self.tray_icon.show()
         self.tray_icon.activated.connect(self.tray_icon_activated)
 
-    def tray_icon_activated(self, reason):
+    @Slot(QSystemTrayIcon.ActivationReason)
+    def tray_icon_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        """系统托盘图标激活事件处理。
+
+        Args:
+            reason: 激活原因
+        """
         if reason == QSystemTrayIcon.DoubleClick:
             if self.ui_translation.isVisible():
                 self.ui_translation.hide()
             else:
                 self.ui_translation.show()
 
-    def quit_application(self):
+    def quit_application(self) -> None:
+        """退出应用程序。"""
         logger.info("退出应用程序\n\n")
         sys.exit(0)
 
-    def setup_hotkeys(self):
+    def setup_hotkeys(self) -> None:
+        """设置热键监听。"""
         config = self.config_manager.get_config()
         self.hotkey_to_chinese = config.get("hotkey_to_chinese", "f2")
         self.hotkey_to_english = config.get("hotkey_to_english", "f4")
 
         self.hotkey_timer = QTimer()
         self.hotkey_timer.timeout.connect(self.check_hotkeys)
-        self.hotkey_timer.start(100)
+        self.hotkey_timer.start(constants.HOTKEY_CHECK_INTERVAL_MS)
 
-        self.last_hotkey_time = 0
-        self.hotkey_cooldown = 0.5
+        self.last_hotkey_time: float = 0
+        self.hotkey_cooldown: float = constants.HOTKEY_COOLDOWN_SECONDS
 
-    def check_hotkeys(self):
+    def check_hotkeys(self) -> None:
+        """检查热键是否被按下。"""
         try:
             current_time = datetime.now().timestamp()
 
@@ -278,7 +326,7 @@ class App:
             ):
                 logger.debug(f"按下热键{self.hotkey_to_chinese}，翻译成中文 ")
                 self.last_hotkey_time = current_time
-                self.translate_clipboard("Chinese")
+                self.translate_clipboard(constants.DEFAULT_TARGET_LANGUAGE)
 
             # 检查英文翻译热键
             elif keyboard.is_pressed(self.hotkey_to_english) and (
@@ -291,14 +339,21 @@ class App:
         except Exception as e:
             logger.exception(f"检查热键错误: {str(e)}")
 
-    @Slot(str)
-    def start_translation(self, text, target_lang="Chinese"):
+    @Slot(str, str)
+    def start_translation(self, text: str, target_lang: str = "Chinese") -> None:
+        """开始翻译。
+
+        Args:
+            text: 待翻译的文本
+            target_lang: 目标语言
+        """
         self.translator_thread.set_text(text)
         self.translator_thread.set_target_lang(target_lang)
         if not self.translator_thread.isRunning():
             self.translator_thread.start()
 
-    def show_settings(self):
+    def show_settings(self) -> None:
+        """显示设置对话框。"""
         if not self.ui_settings:
             self.ui_settings = UiSettings(self.config_manager.get_config(), None)
             self.ui_settings.settings_saved.connect(self.apply_settings)
@@ -310,15 +365,28 @@ class App:
         self.ui_settings.raise_()
         self.ui_settings.activateWindow()
 
-    def show_settings_with_message(self, message):
+    def show_settings_with_message(self, message: str) -> None:
+        """显示设置对话框并显示提示消息。
+
+        Args:
+            message: 提示消息
+        """
         self.show_settings()
         if self.ui_settings:
             self.tray_icon.showMessage(
-                "设置提示", message, QSystemTrayIcon.Information, 5000
+                "设置提示",
+                message,
+                QSystemTrayIcon.Information,
+                constants.TRAY_MESSAGE_INFO_DURATION,
             )
 
     @Slot(dict)
-    def apply_settings(self, new_config):
+    def apply_settings(self, new_config: dict) -> None:
+        """应用新的设置。
+
+        Args:
+            new_config: 新的配置字典
+        """
         try:
             old_config = self.config_manager.get_config().copy()
             self.config_manager.update_config(new_config)
@@ -356,7 +424,7 @@ class App:
                         "设置已更新",
                         f"新热键已生效: 中文={self.hotkey_to_chinese}, 英文={self.hotkey_to_english}",
                         QSystemTrayIcon.Information,
-                        3000,
+                        constants.TRAY_MESSAGE_WARNING_DURATION,
                     )
 
             logger.info("设置已成功应用")
@@ -367,10 +435,11 @@ class App:
                     "设置错误",
                     f"应用设置时出错: {str(e)}",
                     QSystemTrayIcon.Critical,
-                    5000,
+                    constants.TRAY_MESSAGE_INFO_DURATION,
                 )
 
-    def run(self):
+    def run(self) -> None:
+        """运行应用程序。"""
         try:
             logger.info("启动应用程序")
             sys.exit(self.app.exec())

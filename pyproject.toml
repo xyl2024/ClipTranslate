@@ -5,10 +5,8 @@ description = "一个桌面端翻译工具，支持全局快捷键翻译剪切�
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "dotenv>=0.9.9",
     "keyboard>=0.13.5",
     "openai>=2.14.0",
-    "pillow>=11.2.1",
     "pyinstaller>=6.13.0",
     "pyperclip>=1.9.0",
     "pyside6>=6.9.0",

@@ -1,9 +1,37 @@
 import os
+import re
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QStyle, QApplication
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def clean_string(text: str) -> str:
+    """清理文本内容。
+
+    将连续的空格替换为单个空格，移除每行首尾空格，并过滤空行。
+
+    Args:
+        text: 待清理的文本内容
+
+    Returns:
+        清理后的文本内容
+    """
+    # 将连续的空格替换为单个空格
+    text = re.sub(r" +", " ", text)
+
+    # 分割成行并处理每一行
+    lines = text.split("\n")
+
+    # 清理每行的首尾空格，并过滤掉空行
+    cleaned_lines = []
+    for line in lines:
+        stripped_line = line.strip()
+        if stripped_line:  # 只保留非空行
+            cleaned_lines.append(stripped_line)
+
+    return "\n".join(cleaned_lines)
 
 
 def get_app_icon(icon_name="app_icon.png"):
