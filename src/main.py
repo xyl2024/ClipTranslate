@@ -19,6 +19,7 @@ from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QMessageBox
 from ui_translation import UiTranslation
 from translator import ChatTranslator
 from translator import Translator
+from translator import EmojiTranslator
 from translator_thread import TranslatorThread
 from config_manager import ConfigManager
 from ui_settings import UiSettings
@@ -111,6 +112,18 @@ class App:
             self.ui_translation.update_translation_progress
         )
 
+        self.emoji_translator = EmojiTranslator(config)
+        self.emoji_translator_thread = TranslatorThread(self.emoji_translator)
+        self.emoji_translator_thread.translation_done.connect(
+            self.ui_translation.set_emoji_translation
+        )
+        self.emoji_translator_thread.translation_error.connect(
+            self.ui_translation.show_error
+        )
+        self.emoji_translator_thread.translation_progress.connect(
+            self.ui_translation.update_emoji_translation_progress
+        )
+
         self.ui_settings: Optional[UiSettings] = None
 
         self.setup_hotkeys()
@@ -169,6 +182,43 @@ class App:
 
         except Exception as e:
             logger.exception(f"翻译剪贴板过程中发生异常: {str(e)}")
+
+    def generate_emoji_from_clipboard(self) -> None:
+        """从剪贴板生成emoji。"""
+        try:
+            logger.info("开始处理emoji生成请求")
+
+            if self.emoji_translator_thread.is_running:
+                logger.info("emoji翻译线程正在处理其他请求，忽略此次请求")
+                return
+
+            text = clean_string(pyperclip.paste())
+            logger.debug(f"\n{text}")
+
+            if not text.strip():
+                logger.info("剪贴板无文本内容")
+                self.ui_translation.set_translation(
+                    "剪贴板无文本内容", "剪贴板无文本内容"
+                )
+                return
+
+            logger.info("开始执行emoji生成请求")
+            self.start_emoji_translation(text)
+            self.ui_translation.show_emoji_loading(text)
+
+        except Exception as e:
+            logger.exception(f"生成emoji过程中发生异常: {str(e)}")
+
+    def start_emoji_translation(self, text: str) -> None:
+        """开始emoji生成。
+
+        Args:
+            text: 待处理的文本
+        """
+        self.emoji_translator_thread.set_text(text)
+        self.emoji_translator_thread.set_target_lang("Emoji")
+        if not self.emoji_translator_thread.isRunning():
+            self.emoji_translator_thread.start()
 
     def show_simple_confirmation(self, title: str, message: str, detail: str) -> bool:
         """显示简单的确认对话框。
@@ -269,6 +319,10 @@ class App:
         show_action.triggered.connect(self.ui_translation.show)
         tray_menu.addAction(show_action)
 
+        emoji_action = QAction("生成Emoji", self.app)
+        emoji_action.triggered.connect(self.generate_emoji_from_clipboard)
+        tray_menu.addAction(emoji_action)
+
         settings_action = QAction("设置", self.app)
         settings_action.triggered.connect(self.show_settings)
         tray_menu.addAction(settings_action)
@@ -307,6 +361,7 @@ class App:
         config = self.config_manager.get_config()
         self.hotkey_to_chinese = config.get("hotkey_to_chinese", "f2")
         self.hotkey_to_english = config.get("hotkey_to_english", "f4")
+        self.hotkey_to_emoji = config.get("hotkey_to_emoji", constants.DEFAULT_HOTKEY_TO_EMOJI)
 
         self.hotkey_timer = QTimer()
         self.hotkey_timer.timeout.connect(self.check_hotkeys)
@@ -320,15 +375,20 @@ class App:
         try:
             current_time = datetime.now().timestamp()
 
-            # 检查中文翻译热键
-            if keyboard.is_pressed(self.hotkey_to_chinese) and (
+            if keyboard.is_pressed(self.hotkey_to_emoji) and (
+                current_time - self.last_hotkey_time >= self.hotkey_cooldown
+            ):
+                logger.debug(f"按下热键{self.hotkey_to_emoji}，生成Emoji")
+                self.last_hotkey_time = current_time
+                self.generate_emoji_from_clipboard()
+
+            elif keyboard.is_pressed(self.hotkey_to_chinese) and (
                 current_time - self.last_hotkey_time >= self.hotkey_cooldown
             ):
                 logger.debug(f"按下热键{self.hotkey_to_chinese}，翻译成中文 ")
                 self.last_hotkey_time = current_time
                 self.translate_clipboard(constants.DEFAULT_TARGET_LANGUAGE)
 
-            # 检查英文翻译热键
             elif keyboard.is_pressed(self.hotkey_to_english) and (
                 current_time - self.last_hotkey_time >= self.hotkey_cooldown
             ):
@@ -407,6 +467,8 @@ class App:
                 "hotkey_to_chinese"
             ) or old_config.get("hotkey_to_english") != new_config.get(
                 "hotkey_to_english"
+            ) or old_config.get("hotkey_to_emoji") != new_config.get(
+                "hotkey_to_emoji"
             ):
                 self.hotkey_to_chinese = new_config.get(
                     "hotkey_to_chinese", self.hotkey_to_chinese
@@ -414,11 +476,14 @@ class App:
                 self.hotkey_to_english = new_config.get(
                     "hotkey_to_english", self.hotkey_to_english
                 )
+                self.hotkey_to_emoji = new_config.get(
+                    "hotkey_to_emoji", constants.DEFAULT_HOTKEY_TO_EMOJI
+                )
 
                 if self.tray_icon:
                     self.tray_icon.showMessage(
                         "设置已更新",
-                        f"新热键已生效: 中文={self.hotkey_to_chinese}, 英文={self.hotkey_to_english}",
+                        f"新热键已生效: 中文={self.hotkey_to_chinese}, 英文={self.hotkey_to_english}, Emoji={self.hotkey_to_emoji}",
                         QSystemTrayIcon.Information,
                         constants.TRAY_MESSAGE_WARNING_DURATION,
                     )

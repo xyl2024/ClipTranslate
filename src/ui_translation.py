@@ -285,3 +285,41 @@ class UiTranslation(QMainWindow):
         self.text_area.verticalScrollBar().setValue(
             self.text_area.verticalScrollBar().maximum()
         )
+
+    @Slot(str, str)
+    def set_emoji_translation(self, text, emoji_result, usage=None):
+        delimiter = ""
+        self.current_translation = emoji_result
+        self.text_area.setText(f"{text}\n{delimiter}\n{emoji_result}")
+
+        self.text_area.verticalScrollBar().setValue(
+            self.text_area.verticalScrollBar().maximum()
+        )
+
+        if usage:
+            model_name = usage.get("model", "")
+            self.token_label.setText(f"🤖模型: {model_name}")
+
+        self.progress_bar.hide()
+        self.show()
+        self.activateWindow()
+
+    @Slot()
+    def show_emoji_loading(self, text):
+        self.current_original_text = text
+        self.text_area.setText(f"{text}")
+        self.progress_bar.show()
+        self.show()
+        self.activateWindow()
+
+    @Slot(str)
+    def update_emoji_translation_progress(self, partial_emoji):
+        self.current_translation = partial_emoji
+        delimiter = ""
+        self.text_area.setText(
+            f"{self.current_original_text}\n{delimiter}\n{partial_emoji}"
+        )
+
+        self.text_area.verticalScrollBar().setValue(
+            self.text_area.verticalScrollBar().maximum()
+        )

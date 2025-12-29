@@ -29,6 +29,14 @@ Translation requirements:
 4. Directly output the translation result without adding any explanations or comments, and do not include the {SEPARATOR} tag.
 """
 
+SYSTEM_PROMPT_EMOJI = f"""你是一个emoji生成助手。请根据用户提供的文本，生成最合适的emoji表情来表达文本的情感或内容。
+要求：
+1. 直接输出emoji，不要添加任何解释或说明；
+2. 可以输出多个emoji来表达复杂情感；
+3. emoji要准确反映文本的情感、语气和内容；
+4. 不要输出{SEPARATOR}标签。
+"""
+
 # 支持的目标语言
 SUPPORTED_TARGET_LANGUAGES = ["Chinese", "English"]
 
@@ -245,3 +253,107 @@ class ChatTranslator(Translator):
         self.last_usage["model"] = self.api_model
         self._init_client()
         logger.info("通用聊天翻译器配置已更新")
+
+
+class EmojiTranslator(Translator):
+    """Emoji翻译器。
+
+    使用 OpenAI 兼容的 API 生成与文本相符的 emoji。
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        """初始化Emoji翻译器。
+
+        Args:
+            config: 配置字典，应包含 chat_api_key, chat_api_url, chat_api_model
+        """
+        super().__init__(config)
+        self.api_key = self.config.get("chat_api_key", "")
+        self.api_url = self.config.get("chat_api_url", "")
+        self.api_model = self.config.get("chat_api_model", "")
+        self.last_usage["model"] = self.api_model
+        self.last_usage["base_url"] = self.api_url
+        self.client: Optional[OpenAI] = None
+
+        self._init_client()
+
+        if not self.api_key:
+            logger.error("未提供API密钥，emoji功能将不可用")
+
+        logger.info("Emoji翻译器初始化完成")
+
+    def _init_client(self) -> None:
+        """初始化 OpenAI 客户端。"""
+        if self.api_key and self.api_url:
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url=self.api_url,
+            )
+
+    def translate_stream(
+        self,
+        text: str,
+        target_lang: str = "Emoji",
+        callback: Optional[Callable[[str], None]] = None,
+    ) -> str:
+        """流式生成emoji。
+
+        Args:
+            text: 待处理的文本
+            target_lang: 目标语言（此处固定为Emoji）
+            callback: 接收进度更新的回调函数
+
+        Returns:
+            生成的emoji
+        """
+        self._validate_config(self.api_key, self.api_url, self.api_model)
+
+        if not self.client:
+            self._init_client()
+
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT_EMOJI},
+            {"role": "user", "content": SEPARATOR + text + SEPARATOR},
+        ]
+
+        try:
+            self.reset_last_usage()
+            full_content = ""
+
+            stream = self.client.chat.completions.create(
+                model=self.api_model,
+                messages=messages,
+                stream=True,
+                temperature=0.7,
+            )
+
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    content = chunk.choices[0].delta.content
+                    full_content += content
+                    if callback:
+                        callback(full_content)
+
+            logger.info(f"原文：{text[:15]}...")
+            logger.info(f"Emoji：{full_content}")
+            logger.info(f"模型：{self.last_usage.get('model', '未知')}")
+
+            return full_content
+
+        except Exception as e:
+            logger.error(f"生成emoji过程中发生错误: {e}")
+            raise
+
+    def update_config(self, config: Dict[str, Any]) -> None:
+        """更新翻译器配置。
+
+        Args:
+            config: 新的配置字典
+        """
+        self.config = config
+        self.api_key = config.get("chat_api_key", self.api_key)
+        self.api_url = config.get("chat_api_url", self.api_url)
+        self.api_model = config.get("chat_api_model", self.api_model)
+        self.last_usage["model"] = self.api_model
+        self._init_client()
+        logger.info("Emoji翻译器配置已更新")

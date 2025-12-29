@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 
 from utils import get_app_icon
+import constants
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,9 @@ class UiSettings(QDialog):
 
         self.english_hotkey_edit = QLineEdit()
         hotkey_form.addRow("翻译为英文:", self.english_hotkey_edit)
+
+        self.emoji_hotkey_edit = QLineEdit()
+        hotkey_form.addRow("生成Emoji:", self.emoji_hotkey_edit)
 
         self.explanation_label = QLabel("详细格式参考 python keyboard 库格式要求")
         hotkey_form.addRow(self.explanation_label)
@@ -109,7 +113,8 @@ class UiSettings(QDialog):
 
     def load_config(self):
         self.chinese_hotkey_edit.setText(self.config.get("hotkey_to_chinese", "f2"))
-        self.english_hotkey_edit.setText(self.config.get("hotkey_to_english", "f3"))
+        self.english_hotkey_edit.setText(self.config.get("hotkey_to_english", "f4"))
+        self.emoji_hotkey_edit.setText(self.config.get("hotkey_to_emoji", constants.DEFAULT_HOTKEY_TO_EMOJI))
 
         # 加载Chat配置
         self.chat_api_key_edit.setText(self.config.get("chat_api_key", ""))
@@ -120,6 +125,7 @@ class UiSettings(QDialog):
         new_config = {
             "hotkey_to_chinese": self.chinese_hotkey_edit.text(),
             "hotkey_to_english": self.english_hotkey_edit.text(),
+            "hotkey_to_emoji": self.emoji_hotkey_edit.text(),
             # Chat配置
             "chat_api_key": self.chat_api_key_edit.text(),
             "chat_api_url": self.chat_api_url_edit.text(),

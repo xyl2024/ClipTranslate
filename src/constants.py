@@ -36,3 +36,6 @@ DEFAULT_TARGET_LANGUAGE = "Chinese"
 LOG_DIR = ".cliptranslate_logs"
 LOG_FILE_MAX_BYTES = 5 * 1024 * 1024  # 5MB
 LOG_FILE_BACKUP_COUNT = 3
+
+# 默认Emoji翻译热键
+DEFAULT_HOTKEY_TO_EMOJI = "f6"
