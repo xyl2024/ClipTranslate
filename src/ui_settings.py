@@ -140,7 +140,11 @@ class UiSettings(QDialog):
         self.english_hotkey_edit.setText(self.config.get("hotkey_to_english", "f4"))
         self.emoji_hotkey_edit.setText(self.config.get("hotkey_to_emoji", constants.DEFAULT_HOTKEY_TO_EMOJI))
 
-        opacity = int(self.config.get("window_opacity", 95))
+        opacity_value = self.config.get("window_opacity", 0.95)
+        if opacity_value > 1:
+            opacity = int(opacity_value)
+        else:
+            opacity = int(opacity_value * 100)
         self.opacity_slider.setValue(opacity)
         self.opacity_label.setText(f"{opacity}%")
 
