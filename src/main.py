@@ -17,7 +17,7 @@ from PySide6.QtCore import Slot, QTimer, Qt
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QMessageBox
 
 from ui_translation import UiTranslation
-from translator import QwenTranslator, ChatTranslator
+from translator import ChatTranslator
 from translator import Translator
 from translator_thread import TranslatorThread
 from config_manager import ConfigManager
@@ -85,18 +85,18 @@ class App:
 
         try:
             config = self.config_manager.get_config()
-            translator_type = config.get("translator_type", "qwen")
+            translator_type = config.get("translator_type", "chat")
 
             if translator_type == "chat":
                 self.translator: Translator = ChatTranslator(config)
                 logger.info("使用通用聊天模型翻译器")
             else:
-                self.translator: Translator = QwenTranslator(config)
-                logger.info("使用Qwen专用翻译器")
+                self.translator: Translator = ChatTranslator(config)
+                logger.info("使用通用聊天模型翻译器")
         except ValueError as e:
             logger.warning(f"初始化翻译器警告: {e}")
-            logger.info("默认使用Qwen专用翻译器")
-            self.translator = QwenTranslator({})
+            logger.info("默认使用通用聊天模型翻译器")
+            self.translator = ChatTranslator({})
             QTimer.singleShot(
                 constants.SETTINGS_POPUP_DELAY_MS,
                 lambda: self.show_settings_with_message("请设置API密钥"),
@@ -392,16 +392,12 @@ class App:
             self.config_manager.update_config(new_config)
 
             # 检查翻译器类型是否改变
-            old_translator_type = old_config.get("translator_type", "qwen")
-            new_translator_type = new_config.get("translator_type", "qwen")
+            old_translator_type = old_config.get("translator_type", "chat")
+            new_translator_type = new_config.get("translator_type", "chat")
 
             if old_translator_type != new_translator_type:
-                if new_translator_type == "chat":
-                    self.translator = ChatTranslator(new_config)
-                    logger.info("切换到通用聊天模型翻译器")
-                else:
-                    self.translator = QwenTranslator(new_config)
-                    logger.info("切换到Qwen专用翻译器")
+                self.translator = ChatTranslator(new_config)
+                logger.info("切换到通用聊天模型翻译器")
 
                 self.translator_thread.translator = self.translator
             else:
@@ -458,3 +454,6 @@ class App:
 if __name__ == "__main__":
     app = App()
     app.run()
+
+
+

@@ -30,7 +30,6 @@ pyinstaller clipTranslate.spec -y
 - **入口点**: `src/main.py` - `App` 类初始化 QApplication，管理系统托盘、热键（通过 QTimer 轮询），并协调翻译请求
 - **UI 层**: `src/ui_translation.py`（主窗口）、`src/ui_settings.py`（设置对话框） - 无边框窗口，支持自定义 CSS，按 ESC 键隐藏窗口，双击托盘切换窗口可见状态
 - **翻译层**: `src/translator.py` - 抽象 `Translator` 基类及具体实现：
-  - `QwenTranslator` - 阿里云 DashScope 翻译 API（qwen-mt-turbo）
   - `ChatTranslator` - 兼容 OpenAI 的 API（已测试与 SiliconFlow）
 - **线程封装**: `src/translator_thread.py` - `TranslatorThread` 将翻译操作封装在 `QThread` 中，避免 UI 阻塞。发射信号：`translation_done`、`translation_error`、`translation_progress`（流式）
 - **配置层**: `src/config_manager.py` - 加载/保存 JSON 配置到 `HOME/.cliptranslate/config.json`，处理旧格式迁移
@@ -73,21 +72,15 @@ pyinstaller clipTranslate.spec -y
 {
 "hotkey_to_chinese": "f2",
 "hotkey_to_english": "f4",
-"chinese_threshold": 300,
-"english_threshold": 1000,
-"translator_type": "chat",
-"qwen_api_key": "sk-...",
-"qwen_api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
-"qwen_api_model": "qwen-mt-turbo",
 "chat_api_key": "sk-...",
-"chat_api_url": "https://api.siliconflow.cn/v1/chat/completions",
-"chat_api_model": "Qwen/Qwen3-8B"
+"chat_api_url": "https://api.openai.com/v1/chat/completions",
+"chat_api_model": "gpt-3.5-turbo"
 }
 ```
 
 ## 关键文件
 - `src/main.py` - 应用入口，`App` 类
-- `src/translator.py` - `Translator`、`QwenTranslator`、`ChatTranslator`
+- `src/translator.py` - `Translator`、`ChatTranslator`
 - `src/translator_thread.py` - `TranslatorThread`（QThread 封装）
 - `src/config_manager.py` - `ConfigManager`
 - `src/ui_translation.py` - `UiTranslation`（主窗口）

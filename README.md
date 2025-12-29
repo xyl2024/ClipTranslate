@@ -18,8 +18,7 @@ ClipTranslate 是一款 Windows 桌面便捷翻译工具，允许用户通过全
 
 - 通过全局快捷键触发翻译
 - 自动获取剪贴板文本内容
-- 调用阿里云千问翻译模型API进行翻译
-- 调用通用聊天大模型API进行翻译（暂未完善，目前只测试过硅基流动的免费模型Qwen/Qwen3-8B）
+- 调用通用聊天大模型API进行翻译
 - 在独立窗口中同时显示原文和译文
 
 ## 📥 **使用步骤**
@@ -48,7 +47,7 @@ $ uv run src/main.py
 
 1. 运行应用程序后，在系统托盘区找到 ClipTranslate 图标
 2. 右键点击图标，选择"设置"
-3. 输入您的阿里云API密钥/聊天大模型API密钥
+3. 输入您的聊天大模型API密钥
 4. 可自定义翻译快捷键
 5. 点击"保存"完成配置
 
@@ -76,15 +75,9 @@ $ uv run src/main.py
 {
     "hotkey_to_chinese": "f2",
     "hotkey_to_english": "f4",
-    "chinese_threshold": 300,
-    "english_threshold": 1000,
-    "translator_type": "chat",
-    "qwen_api_key": "sk-************************************************",
-    "qwen_api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
-    "qwen_api_model": "qwen-mt-plus",
     "chat_api_key": "sk-************************************************",
-    "chat_api_url": "https://api.siliconflow.cn/v1/chat/completions",
-    "chat_api_model": "Qwen/Qwen3-8B"
+    "chat_api_url": "https://api.openai.com/v1/chat/completions",
+    "chat_api_model": "gpt-3.5-turbo"
 }
 ```
 
@@ -108,5 +101,5 @@ $ uv run src/main.py
 本项目logo来自[text-to-svg](https://github.com/JiuRanYa/text-to-svg)
 
 - **大模型**
-  - [Qwen-MT模型](https://help.aliyun.com/zh/model-studio/machine-translation)
-  - [硅基流动-Qwen/Qwen3-8B模型](https://cloud.siliconflow.cn/models?target=Qwen/Qwen3-8B)
+  - [OpenAI GPT模型](https://platform.openai.com/docs/models)
+  - 任何兼容 OpenAI API 格式的本地或在线模型

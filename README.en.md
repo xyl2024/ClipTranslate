@@ -18,10 +18,9 @@ ClipTranslate is a convenient Windows desktop translation tool that allows users
 ## 🔧 **Key Features**
 
 - Trigger translation via global hotkeys
-- Automatically retrieve clipboard text content
-- Use Alibaba Cloud's Qianwen Translation Model API for translation
-- Use a general chat large model API for translation (Not yet perfected, currently only tested with the free Qwen/Qwen3-8B model from Silicon Flow)
-- Display both original text and translation in a separate window
+- Automatically get clipboard text content
+- Call general chat model API for translation
+- Display original and translated text in a separate window
 
 ## 📥 **Installation Steps**
 
@@ -45,13 +44,13 @@ $ uv sync
 $ uv run src/main.py
 ```
 
-## ⚙️ **First-time Setup**
+## ⚙️ **Initial Configuration**
 
 1. After running the application, find the ClipTranslate icon in the system tray
 2. Right-click the icon and select "Settings"
-3. Enter your Alibaba Cloud API key/Chat model API key
-4. Customize the translation hotkeys
-5. Click "Save" to complete the setup
+3. Enter your chat model API key
+4. You can customize translation hotkeys
+5. Click "Save" to complete the configuration
 
 ## 💡 **How to Use**
 
@@ -77,15 +76,9 @@ The configuration file is located at `HOME/.cliptranslate/config.json`:
 {
     "hotkey_to_chinese": "f2",
     "hotkey_to_english": "f4",
-    "chinese_threshold": 300,
-    "english_threshold": 1000,
-    "translator_type": "chat",
-    "qwen_api_key": "sk-************************************************",
-    "qwen_api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
-    "qwen_api_model": "qwen-mt-plus",
     "chat_api_key": "sk-************************************************",
-    "chat_api_url": "https://api.siliconflow.cn/v1/chat/completions",
-    "chat_api_model": "Qwen/Qwen3-8B"
+    "chat_api_url": "https://api.openai.com/v1/chat/completions",
+    "chat_api_model": "gpt-3.5-turbo"
 }
 ```
 
@@ -109,5 +102,5 @@ The icons in this project come from [Alibaba's Icon Library](https://www.iconfon
 The logo for this project comes from [text-to-svg](https://github.com/JiuRanYa/text-to-svg). 
 
 - **LLM**
-  - [Qwen-MT](https://help.aliyun.com/zh/model-studio/machine-translation)
-  - [siliconflow-Qwen/Qwen3-8B](https://cloud.siliconflow.cn/models?target=Qwen/Qwen3-8B)
+  - [OpenAI GPT Models](https://platform.openai.com/docs/models)
+  - Any model compatible with OpenAI API format
