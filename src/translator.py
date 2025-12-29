@@ -151,6 +151,7 @@ class ChatTranslator(Translator):
         self.api_url = self.config.get("chat_api_url", "")
         self.api_model = self.config.get("chat_api_model", "")
         self.last_usage["model"] = self.api_model
+        self.last_usage["base_url"] = self.api_url
         self.client: Optional[OpenAI] = None
 
         self._init_client()
