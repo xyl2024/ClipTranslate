@@ -52,7 +52,7 @@ class UiSettings(QDialog):
 
         self.english_hotkey_edit = QLineEdit()
         hotkey_form.addRow("翻译为英文:", self.english_hotkey_edit)
-        
+
         self.explanation_label = QLabel("详细格式参考 python keyboard 库格式要求")
         hotkey_form.addRow(self.explanation_label)
 

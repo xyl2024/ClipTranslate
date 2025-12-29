@@ -1,6 +1,5 @@
-import json
 import logging
-import requests
+from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -190,11 +189,22 @@ class ChatTranslator(Translator):
             "total_tokens": 0,
             "model": self.api_model,
         }
+        self.client = None
+
+        self._init_client()
 
         if not self.api_key:
             logger.error("未提供API密钥，翻译功能将不可用")
 
         logger.info("通用聊天翻译器初始化完成")
+
+    def _init_client(self):
+        """初始化 OpenAI 客户端"""
+        if self.api_key and self.api_url:
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url=self.api_url,
+            )
 
     def _build_translation_prompt(self, text, target_lang):
         """构建翻译提示词"""
@@ -221,72 +231,31 @@ class ChatTranslator(Translator):
         if not self.api_model:
             raise ValueError("未配置API模型，请在设置中配置")
 
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}",
-        }
+        if not self.client:
+            self._init_client()
 
         messages = self._build_translation_prompt(text, target_lang)
 
-        data = {
-            "model": self.api_model,
-            "messages": messages,
-            "stream": True,
-            "enable_thinking": False,  # todo，需要适配一下无thinking功能的大模型
-            "temperature": 0.3,  # 降低随机性，提高翻译一致性
-        }
-
         try:
-            response = requests.post(
-                self.api_url,
-                headers=headers,
-                json=data,
-                stream=True,
-            )
-
-            if response.status_code != 200:
-                raise Exception(f"API错误: {response.status_code} - {response.text}")
-
             self.reset_last_usage()
             full_content = ""
 
-            for line in response.iter_lines():
-                if line:
-                    # logger.debug(line.decode("utf-8"))
-                    line = line.decode("utf-8")
-                    if line.startswith("data: "):
-                        json_str = line[6:]  # 跳过 "data: " 前缀
-                        if json_str.strip() == "[DONE]":  # 流结束标记
-                            break
+            stream = self.client.chat.completions.create(
+                model=self.api_model,
+                messages=messages,
+                stream=True,
+                temperature=0.3,  # 降低随机性，提高翻译一致性
+            )
 
-                        try:
-                            chunk = json.loads(json_str)
-                        except json.JSONDecodeError as e:
-                            logger.error(f"无法解析 JSON: {json_str}, 错误: {e}")
-                            continue
-
-                        if "choices" in chunk and chunk["choices"]:
-                            delta = chunk["choices"][0].get("delta", {})
-                            # logger.debug(delta)
-                            content = delta.get("content", "")
-                            if content:
-                                full_content += content
-                                if callback:
-                                    callback(full_content)
-
-                        # 暂时不统计，建议使用免费模型。
-                        # # 处理使用量统计（如果有）
-                        # if "usage" in chunk:
-                        #     self.last_usage = {
-                        #         "prompt_tokens": chunk["usage"].get("prompt_tokens", 0),
-                        #         "completion_tokens": chunk["usage"].get("completion_tokens", 0),
-                        #         "total_tokens": chunk["usage"].get("total_tokens", 0),
-                        #         "model": chunk.get("model", self.api_model),
-                        #     }
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    content = chunk.choices[0].delta.content
+                    full_content += content
+                    if callback:
+                        callback(full_content)
 
             logger.info(f"原文：{text[:15]}...")
             logger.info(f"译文({target_lang})：{full_content[:15]}...")
-            # logger.info(f"Token使用量: {self.last_usage}")
             logger.info(f"翻译模型：{self.last_usage.get('model', '未知')}")
 
             return full_content
@@ -300,6 +269,7 @@ class ChatTranslator(Translator):
         self.api_key = config.get("chat_api_key", self.api_key)
         self.api_url = config.get("chat_api_url", self.api_url)
         self.api_model = config.get("chat_api_model", self.api_model)
+        self._init_client()
         logger.info("通用聊天翻译器配置已更新")
 
     def reset_last_usage(self):
